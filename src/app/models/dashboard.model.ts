@@ -17,6 +17,46 @@ export interface RegistrationPoint {
   count: number;
 }
 
+/** Retour de la RPC `admin_dashboard_charts` (Sprint A1). */
+export interface DashboardCharts {
+  series: ChartDayPoint[];
+  countries: CountryStat[];
+  genders: GenderStat[];
+}
+
+export interface ChartDayPoint {
+  day: string; // 'YYYY-MM-DD'
+  new_users: number;
+  total_users: number;
+  revenue_cents: number;
+  active_users: number;
+  matches: number;
+  messages: number;
+  subscriptions: number;
+}
+
+export interface CountryStat {
+  country: string | null;
+  count: number;
+}
+
+export interface GenderStat {
+  gender: string | null;
+  count: number;
+}
+
+/** Ligne de la RPC `admin_recent_activity`. */
+export interface ActivityItem {
+  kind: 'signup' | 'match' | 'kyc' | 'report' | 'subscription' | string;
+  label: string;
+  detail: string | null;
+  happened_at: string;
+}
+
+/** Fenêtres d'analyse proposées par le dashboard. */
+export type ChartPeriod = 7 | 30 | 90;
+export const CHART_PERIODS: ChartPeriod[] = [7, 30, 90];
+
 /** Résultat de la RPC `admin_search_profiles` (recherche globale). */
 export interface ProfileSearchResult {
   id: string;

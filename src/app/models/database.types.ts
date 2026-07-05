@@ -835,7 +835,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_dashboard_charts: { Args: { p_days?: number }; Returns: Json }
       admin_dashboard_stats: { Args: never; Returns: Json }
+      admin_recent_activity: {
+        Args: { p_limit?: number }
+        Returns: {
+          detail: string
+          happened_at: string
+          kind: string
+          label: string
+        }[]
+      }
       admin_search_profiles: {
         Args: { p_limit?: number; p_query: string }
         Returns: {

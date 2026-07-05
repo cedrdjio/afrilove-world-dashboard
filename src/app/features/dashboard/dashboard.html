@@ -78,25 +78,22 @@
       />
     </div>
 
-    <!-- Bento principal -->
+    <!-- Croissance + colonne du jour -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <!-- Inscriptions 14 jours -->
-      <article class="glass-card p-5 lg:col-span-2">
-        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 class="font-display text-base font-bold text-ink dark:text-cream">Inscriptions</h2>
-            <p class="text-xs text-ink-muted dark:text-cream-bezel2">14 derniers jours</p>
-          </div>
-          <span
-            class="rounded-full bg-brand-500/12 px-3 py-1 font-display text-xs font-bold text-brand-600 dark:bg-brand-400/20 dark:text-brand-300"
-          >
-            {{ registrations14dTotal() | compactNumber }} au total
-          </span>
-        </div>
-        <app-registrations-chart [points]="s.registrations_14d" />
-      </article>
+      @if (charts()) {
+        <app-trend-chart
+          class="lg:col-span-2"
+          title="Croissance des utilisateurs"
+          [subtitle]="period() + ' derniers jours'"
+          [points]="growthPoints()"
+          kind="area"
+          aggregate="last"
+          [height]="280"
+        />
+      } @else {
+        <div class="skeleton h-80 lg:col-span-2"></div>
+      }
 
-      <!-- Colonne droite : activité du jour + à traiter -->
       <div class="flex flex-col gap-4">
         <article class="glass-card p-5">
           <h2 class="mb-3 font-display text-base font-bold text-ink dark:text-cream">Aujourd'hui</h2>
@@ -172,6 +169,102 @@
         </article>
       </div>
     </div>
+
+    <!-- Analytique -->
+    <header class="mt-2 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="font-display text-lg font-extrabold text-ink dark:text-cream">Analytique</h2>
+        <p class="text-xs text-ink-muted dark:text-cream-bezel2">Tendances sur la période choisie</p>
+      </div>
+      <div class="glass inline-flex rounded-xl p-1" role="group" aria-label="Période d'analyse">
+        @for (p of periods; track p) {
+          <button
+            type="button"
+            class="rounded-lg px-3.5 py-1.5 font-display text-xs font-bold transition-all"
+            [class]="
+              period() === p
+                ? 'bg-brand-500 text-white shadow-md dark:bg-brand-400'
+                : 'text-ink-muted hover:text-ink dark:text-cream-bezel2 dark:hover:text-cream'
+            "
+            (click)="setPeriod(p)"
+            [attr.aria-pressed]="period() === p"
+          >
+            {{ p }} j
+          </button>
+        }
+      </div>
+    </header>
+
+    @if (chartsQuery.isPending()) {
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="skeleton h-64"></div>
+        }
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="skeleton h-56"></div>
+        }
+      </div>
+    } @else if (charts(); as c) {
+      <!-- Inscriptions / actifs / genres -->
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <app-trend-chart
+          title="Inscriptions"
+          subtitle="Nouveaux comptes par jour"
+          [points]="newUserPoints()"
+          kind="bar"
+          [height]="200"
+        />
+        <app-trend-chart
+          title="Utilisateurs actifs"
+          subtitle="Membres actifs par jour"
+          [points]="activePoints()"
+          kind="area"
+          [height]="200"
+        />
+        <app-gender-donut [genders]="c.genders" />
+      </div>
+
+      <!-- Petits multiples : revenus, abonnements, matchs, messages -->
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <app-trend-chart
+          title="Revenus"
+          subtitle="Nouveaux abonnements (€)"
+          [points]="revenuePoints()"
+          kind="bar"
+          format="currency"
+          [height]="150"
+        />
+        <app-trend-chart
+          title="Abonnements"
+          subtitle="Souscriptions par jour"
+          [points]="subscriptionPoints()"
+          kind="bar"
+          [height]="150"
+        />
+        <app-trend-chart
+          title="Matchs"
+          subtitle="Coups de cœur mutuels"
+          [points]="matchPoints()"
+          kind="bar"
+          [height]="150"
+        />
+        <app-trend-chart
+          title="Messages"
+          subtitle="Messages échangés"
+          [points]="messagePoints()"
+          kind="bar"
+          [height]="150"
+        />
+      </div>
+
+      <!-- Activité récente + top pays -->
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <app-activity-feed class="lg:col-span-2" [items]="activity()" />
+        <app-country-list [countries]="c.countries" />
+      </div>
+    }
 
     <!-- Actions rapides -->
     <article class="glass-card flex flex-wrap items-center gap-3 p-5">

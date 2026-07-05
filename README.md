@@ -81,4 +81,16 @@ src/app/
 - Gestion d'erreurs globale (ErrorHandler → toast, anti-rafale)
 - Squelette des routes des sprints A2 → A12 (stubs avec accès par rôle)
 
-Les sprints suivants (A1 complet, A2 utilisateurs, A3 KYC…) s'appuient sur ce socle.
+## Sprint A1 — livré
+
+- Sélecteur de période 7 / 30 / 90 jours (persisté, refetch instantané)
+- Croissance des utilisateurs (cumul, aire) et inscriptions par jour
+- Utilisateurs actifs par jour (messages + swipes + dernière activité)
+- Revenus, abonnements, matchs et messages par jour (petits multiples)
+- Répartition par genre (donut, palette validée CVD/contraste sur les deux thèmes)
+- Top pays (barres de progression)
+- Flux d'activité récente unifié : inscriptions, matchs, KYC, signalements,
+  abonnements (RPC `admin_recent_activity`, rafraîchi toutes les 30 s)
+- RPC `admin_dashboard_charts(p_days)` — séries temporelles agrégées côté SQL
+
+Les sprints suivants (A2 utilisateurs, A3 KYC…) s'appuient sur ce socle.
