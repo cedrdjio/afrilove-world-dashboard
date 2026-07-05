@@ -1,0 +1,282 @@
+@import 'tailwindcss';
+
+/* Dark mode piloté par la classe .dark posée sur <html> (ThemeService). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Charte AfriLove World — lavande v1.0, alignée sur le mobile
+ * (afrolove-world-mob/tailwind.config.js). Les noms de tokens sont
+ * sémantiques : un rebranding ne change que les valeurs.
+ */
+@theme {
+  --font-display: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Nunito Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand — violet profond (actions, liens, CTA) */
+  --color-brand-50: #f6f2fd;
+  --color-brand-100: #ede4f9;
+  --color-brand-200: #d9c9f1;
+  --color-brand-300: #c3b1e1;
+  --color-brand-400: #8b69d6;
+  --color-brand-500: #6a4fc0;
+  --color-brand-600: #5b3e9e;
+  --color-brand-700: #4a2c7f;
+  --color-brand-800: #3a2b4f;
+  --color-brand-900: #2e2440;
+  --color-brand: #6a4fc0;
+
+  /* Accent lilas (badges vérifiés, premium) */
+  --color-lilac-light: #c3b1e1;
+  --color-lilac: #9b7ede;
+  --color-lilac-dark: #7c5cbf;
+
+  /* Ink — aubergine, texte sur fonds clairs */
+  --color-ink: #2e2440;
+  --color-ink-soft: #3d3552;
+  --color-ink-muted: #5e5473;
+  --color-ink-faint: #8a7fa0;
+
+  /* Cream — blanc lavande, surfaces claires */
+  --color-cream: #faf8fd;
+  --color-cream-bezel1: #ede4f9;
+  --color-cream-bezel2: #d9c9f1;
+
+  /* Deep — nuit aubergine (mode sombre) */
+  --color-deep: #221937;
+  --color-deep-soft: #3a2b4f;
+  --color-deep-ember: #4a2c7f;
+  --color-deep-black: #180f2a;
+
+  --color-success: #3e9b5f;
+  --color-danger: #c24545;
+  --color-warning: #d08a3e;
+
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-scale-in: scale-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-blob: blob-float 16s ease-in-out infinite;
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes blob-float {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    33% {
+      transform: translate(4%, -6%) scale(1.08);
+    }
+    66% {
+      transform: translate(-5%, 4%) scale(0.94);
+    }
+  }
+
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 --alpha(var(--color-success) / 45%);
+    }
+    50% {
+      opacity: 0.75;
+      box-shadow: 0 0 0 6px transparent;
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+@layer components {
+  /* Verre très léger — la signature visuelle du dashboard. */
+  .glass,
+  .glass-card {
+    background: color-mix(in srgb, #ffffff 62%, transparent);
+    border: 1px solid color-mix(in srgb, #ffffff 70%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+    backdrop-filter: blur(18px) saturate(1.5);
+
+    :where(.dark, .dark *)& {
+      background: color-mix(in srgb, var(--color-deep) 58%, transparent);
+      border-color: color-mix(in srgb, #ffffff 9%, transparent);
+    }
+  }
+
+  .glass-card {
+    border-radius: var(--radius-3xl);
+    box-shadow:
+      0 1px 2px --alpha(var(--color-ink) / 4%),
+      0 12px 32px -16px --alpha(var(--color-brand-600) / 18%);
+
+    :where(.dark, .dark *)& {
+      box-shadow:
+        0 1px 2px rgb(0 0 0 / 25%),
+        0 16px 40px -20px rgb(0 0 0 / 60%);
+    }
+  }
+
+  .glass-card-hover {
+    transition:
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 2px 4px --alpha(var(--color-ink) / 5%),
+        0 20px 44px -18px --alpha(var(--color-brand-600) / 28%);
+    }
+  }
+
+  /* Bouton principal — dégradé violet de la charte. */
+  .btn-brand {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 font-display text-sm font-semibold text-white;
+    background: linear-gradient(135deg, var(--color-brand-400), var(--color-brand-500) 55%, var(--color-brand-600));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 25%),
+      0 8px 20px -8px --alpha(var(--color-brand-600) / 55%);
+    transition:
+      transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.2s,
+      filter 0.2s;
+
+    &:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.985);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  }
+
+  /* Bouton icône discret (topbar, cartes). */
+  .btn-icon {
+    @apply inline-flex size-10 items-center justify-center rounded-xl text-ink-muted transition-colors;
+
+    &:hover {
+      @apply bg-brand-100/70 text-brand-600;
+    }
+
+    :where(.dark, .dark *)& {
+      @apply text-cream-bezel2;
+
+      &:hover {
+        background: color-mix(in srgb, var(--color-brand-400) 18%, transparent);
+        @apply text-cream;
+      }
+    }
+  }
+
+  /* Champ de formulaire verre. */
+  .input-glass {
+    @apply w-full rounded-2xl border px-4 py-3 font-body text-sm text-ink outline-none transition-all;
+    background: color-mix(in srgb, #ffffff 72%, transparent);
+    border-color: color-mix(in srgb, var(--color-brand-300) 55%, transparent);
+
+    &::placeholder {
+      color: var(--color-ink-faint);
+    }
+
+    &:focus {
+      border-color: var(--color-brand-400);
+      box-shadow: 0 0 0 4px --alpha(var(--color-brand-400) / 18%);
+    }
+
+    :where(.dark, .dark *)& {
+      @apply text-cream;
+      background: color-mix(in srgb, var(--color-deep-black) 65%, transparent);
+      border-color: color-mix(in srgb, #ffffff 12%, transparent);
+
+      &::placeholder {
+        color: color-mix(in srgb, var(--color-cream-bezel2) 60%, transparent);
+      }
+
+      &:focus {
+        border-color: var(--color-brand-400);
+      }
+    }
+  }
+
+  /* Squelette de chargement shimmer. */
+  .skeleton {
+    @apply rounded-xl;
+    background: linear-gradient(
+      100deg,
+      --alpha(var(--color-brand-200) / 35%) 40%,
+      --alpha(var(--color-brand-100) / 70%) 50%,
+      --alpha(var(--color-brand-200) / 35%) 60%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+
+    :where(.dark, .dark *)& {
+      background: linear-gradient(
+        100deg,
+        --alpha(var(--color-deep-soft) / 60%) 40%,
+        --alpha(var(--color-deep-ember) / 45%) 50%,
+        --alpha(var(--color-deep-soft) / 60%) 60%
+      );
+      background-size: 200% 100%;
+    }
+  }
+
+  /* Pastille "en direct". */
+  .live-dot {
+    @apply inline-block size-2 rounded-full bg-success;
+    animation: var(--animate-pulse-dot);
+  }
+
+  /* Entrée de navigation active (routerLinkActive). */
+  .nav-active {
+    @apply text-brand-600;
+    background: linear-gradient(
+      135deg,
+      --alpha(var(--color-brand-400) / 16%),
+      --alpha(var(--color-brand-500) / 10%)
+    );
+    box-shadow: inset 0 0 0 1px --alpha(var(--color-brand-400) / 25%);
+
+    :where(.dark, .dark *)& {
+      @apply text-cream;
+      background: linear-gradient(
+        135deg,
+        --alpha(var(--color-brand-400) / 30%),
+        --alpha(var(--color-brand-500) / 18%)
+      );
+      box-shadow: inset 0 0 0 1px --alpha(var(--color-brand-400) / 40%);
+    }
+  }
+}

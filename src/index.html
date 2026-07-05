@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>AfriLove Admin</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Console d'administration AfriLove World">
+  <meta name="theme-color" content="#faf8fd" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#180f2a" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    // Applique le thème avant le premier rendu pour éviter tout flash.
+    (function () {
+      try {
+        var stored = localStorage.getItem('alw-admin-theme');
+        var dark = stored ? stored === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.classList.add('dark');
+      } catch (e) { /* stockage indisponible : thème clair par défaut */ }
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

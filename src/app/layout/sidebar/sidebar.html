@@ -1,0 +1,126 @@
+<!-- Voile mobile -->
+@if (mobileOpen()) {
+  <div
+    class="fixed inset-0 z-40 bg-deep-black/45 backdrop-blur-sm lg:hidden"
+    (click)="closeMobile()"
+    aria-hidden="true"
+  ></div>
+}
+
+<aside
+  class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col p-3 transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 lg:transition-[width]"
+  [class.-translate-x-full]="!mobileOpen()"
+  [class.lg:w-72]="!collapsed()"
+  [class.lg:w-22]="collapsed()"
+>
+  <div class="glass-card flex h-full min-h-0 flex-col overflow-hidden">
+    <!-- En-tête / logo -->
+    <div class="flex items-center gap-3 px-4 pt-5 pb-4" [class.justify-center]="collapsed()" [class.px-2]="collapsed()">
+      <app-logo [size]="34" />
+      @if (!collapsed()) {
+        <div class="min-w-0">
+          <p class="font-display text-sm leading-tight font-extrabold tracking-wide text-ink dark:text-cream">
+            AFRILOVE <span class="text-brand-500 dark:text-brand-300">WORLD</span>
+          </p>
+          <p class="text-[11px] text-ink-faint dark:text-cream-bezel2/70">Console d'administration</p>
+        </div>
+      }
+      <button
+        type="button"
+        class="btn-icon ml-auto lg:hidden"
+        (click)="closeMobile()"
+        aria-label="Fermer le menu"
+      >
+        <lucide-icon [img]="XIcon" [size]="18" />
+      </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="min-h-0 flex-1 overflow-y-auto px-3 pb-3" aria-label="Navigation principale">
+      @for (section of sections(); track section.label) {
+        <div class="mt-4 first:mt-1">
+          @if (!collapsed()) {
+            <p class="px-3 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-ink-faint uppercase dark:text-cream-bezel2/60">
+              {{ section.label }}
+            </p>
+          }
+          <ul class="flex flex-col gap-1">
+            @for (item of section.items; track item.path) {
+              <li>
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="nav-active"
+                  [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+                  (click)="closeMobile()"
+                  class="group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-ink-muted transition-colors hover:bg-brand-100/70 hover:text-brand-600 dark:text-cream-bezel2 dark:hover:bg-white/8 dark:hover:text-cream"
+                  [class.justify-center]="collapsed()"
+                  [matTooltip]="collapsed() ? item.label : ''"
+                  matTooltipPosition="right"
+                >
+                  <lucide-icon [img]="item.icon" [size]="19" class="shrink-0" />
+                  @if (!collapsed()) {
+                    <span class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+                    @if (badgeFor(item) > 0) {
+                      <span
+                        class="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-500 px-1.5 py-0.5 text-[10px] font-bold text-white dark:bg-brand-400"
+                      >
+                        {{ badgeFor(item) | compactNumber }}
+                      </span>
+                    } @else if (item.sprint) {
+                      <span
+                        class="rounded-full bg-cream-bezel1 px-1.5 py-0.5 text-[9px] font-bold text-ink-faint dark:bg-white/8 dark:text-cream-bezel2/70"
+                      >
+                        {{ item.sprint }}
+                      </span>
+                    }
+                  } @else if (badgeFor(item) > 0) {
+                    <span class="absolute top-1.5 right-1.5 size-2 rounded-full bg-brand-500 dark:bg-brand-300"></span>
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </nav>
+
+    <!-- Pied : repli + carte utilisateur -->
+    <div class="border-t border-ink/6 px-3 py-3 dark:border-white/8">
+      <button
+        type="button"
+        class="btn-icon hidden w-full lg:inline-flex"
+        (click)="toggleCollapsed()"
+        [attr.aria-label]="collapsed() ? 'Déployer la navigation' : 'Replier la navigation'"
+      >
+        <lucide-icon [img]="collapsed() ? PanelLeftOpenIcon : PanelLeftCloseIcon" [size]="18" />
+      </button>
+
+      <div class="mt-2 flex items-center gap-3 rounded-2xl p-2" [class.justify-center]="collapsed()">
+        <span
+          class="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl bg-linear-135 from-brand-400 to-brand-600 font-display text-xs font-bold text-white"
+        >
+          {{ initials() }}
+        </span>
+        @if (!collapsed()) {
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-display text-sm font-semibold text-ink dark:text-cream">
+              {{ displayName() }}
+            </p>
+            <p class="truncate text-[11px] font-semibold text-brand-500 dark:text-brand-300">
+              {{ roleLabel() }}
+            </p>
+          </div>
+          <button
+            type="button"
+            class="btn-icon shrink-0"
+            (click)="signOut()"
+            matTooltip="Se déconnecter"
+            aria-label="Se déconnecter"
+          >
+            <lucide-icon [img]="LogOutIcon" [size]="17" />
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</aside>

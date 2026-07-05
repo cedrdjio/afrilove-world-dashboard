@@ -1,0 +1,110 @@
+@if (isOpen()) {
+  <div
+    class="fixed inset-0 z-[70] flex items-start justify-center bg-deep-black/40 px-4 pt-[12vh] backdrop-blur-sm"
+    (click)="isOpen.set(false)"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Recherche globale"
+  >
+    <div
+      class="glass-card w-full max-w-xl overflow-hidden animate-scale-in"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Champ de recherche -->
+      <div class="flex items-center gap-3 border-b border-ink/6 px-4 py-3.5 dark:border-white/8">
+        @if (searching()) {
+          <lucide-icon [img]="LoaderIcon" [size]="18" class="animate-spin text-brand-500 dark:text-brand-300" />
+        } @else {
+          <lucide-icon [img]="SearchIcon" [size]="18" class="text-ink-faint dark:text-cream-bezel2/70" />
+        }
+        <input
+          #searchInput
+          type="text"
+          [value]="query()"
+          (input)="onQueryInput(searchInput.value)"
+          placeholder="Rechercher une page, un membre, un e-mail…"
+          class="w-full bg-transparent font-body text-sm text-ink outline-none placeholder:text-ink-faint dark:text-cream dark:placeholder:text-cream-bezel2/60"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <kbd
+          class="hidden rounded-md border border-ink/10 bg-white/60 px-1.5 py-0.5 text-[10px] font-bold text-ink-faint sm:block dark:border-white/10 dark:bg-white/10 dark:text-cream-bezel2"
+        >
+          Échap
+        </kbd>
+      </div>
+
+      <!-- Résultats -->
+      <div class="max-h-[50vh] overflow-y-auto p-2">
+        @if (pageEntries().length > 0) {
+          <p class="px-3 pt-2 pb-1 text-[10px] font-bold tracking-[0.14em] text-ink-faint uppercase dark:text-cream-bezel2/60">
+            Pages
+          </p>
+          @for (entry of pageEntries(); track entry.path; let i = $index) {
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors"
+              [class]="
+                activeIndex() === i
+                  ? 'bg-brand-500/12 dark:bg-brand-400/20'
+                  : 'hover:bg-brand-100/50 dark:hover:bg-white/6'
+              "
+              (click)="select(entry)"
+              (mouseenter)="activeIndex.set(i)"
+            >
+              <lucide-icon [img]="entry.icon" [size]="17" class="shrink-0 text-brand-500 dark:text-brand-300" />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-semibold text-ink dark:text-cream">{{ entry.label }}</span>
+                <span class="block truncate text-xs text-ink-muted dark:text-cream-bezel2">{{ entry.detail }}</span>
+              </span>
+              @if (activeIndex() === i) {
+                <lucide-icon [img]="EnterIcon" [size]="14" class="shrink-0 text-ink-faint dark:text-cream-bezel2/70" />
+              }
+            </button>
+          }
+        }
+
+        @if (userEntries().length > 0) {
+          <p class="px-3 pt-3 pb-1 text-[10px] font-bold tracking-[0.14em] text-ink-faint uppercase dark:text-cream-bezel2/60">
+            Membres
+          </p>
+          @for (entry of userEntries(); track $index; let i = $index) {
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors"
+              [class]="
+                activeIndex() === i + pageEntries().length
+                  ? 'bg-brand-500/12 dark:bg-brand-400/20'
+                  : 'hover:bg-brand-100/50 dark:hover:bg-white/6'
+              "
+              (click)="select(entry)"
+              (mouseenter)="activeIndex.set(i + pageEntries().length)"
+            >
+              <span
+                class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-lilac/15 text-lilac-dark dark:bg-lilac/20 dark:text-lilac-light"
+              >
+                <lucide-icon [img]="UserIcon" [size]="15" />
+              </span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-center gap-1.5 text-sm font-semibold text-ink dark:text-cream">
+                  <span class="truncate">{{ entry.label }}</span>
+                  @if (entry.verified) {
+                    <lucide-icon [img]="VerifiedIcon" [size]="14" class="shrink-0 text-lilac" />
+                  }
+                </span>
+                <span class="block truncate text-xs text-ink-muted dark:text-cream-bezel2">{{ entry.detail }}</span>
+              </span>
+              <lucide-icon [img]="ArrowRightIcon" [size]="14" class="shrink-0 text-ink-faint dark:text-cream-bezel2/70" />
+            </button>
+          }
+        }
+
+        @if (entries().length === 0 && !searching()) {
+          <p class="px-3 py-8 text-center text-sm text-ink-muted dark:text-cream-bezel2">
+            Aucun résultat pour « {{ query() }} »
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+}

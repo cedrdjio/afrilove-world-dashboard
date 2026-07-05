@@ -1,0 +1,82 @@
+<header class="sticky top-0 z-30 px-4 pt-3 md:px-8 lg:pl-0">
+  <div class="glass-card flex h-14 items-center gap-2 rounded-2xl px-3 md:px-4">
+    <!-- Burger (mobile) -->
+    <button
+      type="button"
+      class="btn-icon lg:hidden"
+      (click)="menuClick.emit()"
+      aria-label="Ouvrir la navigation"
+    >
+      <lucide-icon [img]="MenuIcon" [size]="20" />
+    </button>
+
+    <!-- Fil d'Ariane (desktop) -->
+    <div class="hidden min-w-0 md:block">
+      <app-breadcrumbs />
+    </div>
+
+    <div class="flex-1"></div>
+
+    <!-- Recherche globale -->
+    <button
+      type="button"
+      class="hidden items-center gap-2 rounded-xl border border-ink/8 bg-white/40 px-3 py-2 text-sm text-ink-faint transition-all hover:border-brand-400/50 hover:text-ink-muted sm:inline-flex dark:border-white/10 dark:bg-white/5 dark:text-cream-bezel2/70 dark:hover:text-cream-bezel2"
+      (click)="search.open()"
+    >
+      <lucide-icon [img]="SearchIcon" [size]="15" />
+      <span class="pr-6">Rechercher…</span>
+      <kbd
+        class="rounded-md border border-ink/10 bg-white/60 px-1.5 py-0.5 font-body text-[10px] font-bold text-ink-faint dark:border-white/10 dark:bg-white/10 dark:text-cream-bezel2"
+      >
+        ⌘K
+      </kbd>
+    </button>
+    <button
+      type="button"
+      class="btn-icon sm:hidden"
+      (click)="search.open()"
+      aria-label="Rechercher"
+    >
+      <lucide-icon [img]="SearchIcon" [size]="19" />
+    </button>
+
+    <!-- Bascule de thème -->
+    <button
+      type="button"
+      class="btn-icon"
+      (click)="theme.toggle()"
+      [matTooltip]="theme.theme() === 'dark' ? 'Mode clair' : 'Mode sombre'"
+      [attr.aria-label]="theme.theme() === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'"
+    >
+      <lucide-icon [img]="theme.theme() === 'dark' ? SunIcon : MoonIcon" [size]="19" />
+    </button>
+
+    <!-- Alertes -->
+    <app-notification-panel />
+
+    <!-- Compte -->
+    <button
+      type="button"
+      [matMenuTriggerFor]="accountMenu"
+      class="ml-1 inline-flex size-9 items-center justify-center rounded-xl bg-linear-135 from-brand-400 to-brand-600 font-display text-[11px] font-bold text-white transition-transform hover:scale-105"
+      aria-label="Menu du compte"
+    >
+      {{ auth.initials() }}
+    </button>
+    <mat-menu #accountMenu="matMenu" xPosition="before">
+      <div class="px-4 py-3" (click)="$event.stopPropagation()">
+        <p class="font-display text-sm font-bold text-ink dark:text-cream">{{ auth.displayName() }}</p>
+        <p class="mt-0.5 text-xs text-ink-muted dark:text-cream-bezel2">{{ auth.email() }}</p>
+        <span
+          class="mt-2 inline-flex rounded-full bg-brand-500/12 px-2.5 py-0.5 text-[11px] font-bold text-brand-600 dark:bg-brand-400/20 dark:text-brand-300"
+        >
+          {{ auth.roleLabel() }}
+        </span>
+      </div>
+      <button mat-menu-item (click)="signOut()">
+        <lucide-icon [img]="LogOutIcon" [size]="16" class="mr-2" />
+        Se déconnecter
+      </button>
+    </mat-menu>
+  </div>
+</header>

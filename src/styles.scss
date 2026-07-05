@@ -1,0 +1,102 @@
+// Thème global AfriLove Admin — Material custom (M3) + fond aurora lavande.
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+
+  @include mat.theme((
+    color: (
+      primary: mat.$violet-palette,
+      theme-type: color-scheme,
+    ),
+    typography: (
+      plain-family: 'Nunito Variable',
+      brand-family: 'Plus Jakarta Sans Variable',
+    ),
+    density: 0,
+  ));
+
+  // Aligne les tokens système Material sur la charte lavande.
+  @include mat.theme-overrides((
+    primary: #6a4fc0,
+    on-primary: #ffffff,
+    primary-container: #ede4f9,
+    on-primary-container: #2e2440,
+  ));
+}
+
+html.dark {
+  color-scheme: dark;
+
+  @include mat.theme-overrides((
+    primary: #8b69d6,
+    on-primary: #ffffff,
+    primary-container: #4a2c7f,
+    on-primary-container: #ede4f9,
+  ));
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Nunito Variable', ui-sans-serif, system-ui, sans-serif;
+  color: #2e2440;
+  background-color: #faf8fd;
+  // Aurora lavande — visible sous les panneaux de verre.
+  background-image:
+    radial-gradient(52rem 34rem at 8% -8%, rgba(139 105 214 / 0.2), transparent 60%),
+    radial-gradient(44rem 30rem at 104% 12%, rgba(195 177 225 / 0.32), transparent 62%),
+    radial-gradient(50rem 36rem at 50% 118%, rgba(106 79 192 / 0.14), transparent 60%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+html.dark body {
+  color: #faf8fd;
+  background-color: #180f2a;
+  background-image:
+    radial-gradient(52rem 34rem at 8% -8%, rgba(74 44 127 / 0.55), transparent 62%),
+    radial-gradient(44rem 30rem at 104% 12%, rgba(106 79 192 / 0.3), transparent 62%),
+    radial-gradient(50rem 36rem at 50% 118%, rgba(139 105 214 / 0.18), transparent 60%);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(139 105 214 / 0.35);
+}
+
+// Barres de défilement fines, teintées marque.
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(106 79 192 / 0.35) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: rgba(106 79 192 / 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

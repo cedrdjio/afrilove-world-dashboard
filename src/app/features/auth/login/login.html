@@ -1,0 +1,112 @@
+<div class="relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-10">
+  <!-- Halos animés du fond aurora -->
+  <div
+    class="pointer-events-none absolute -top-32 -left-24 size-96 rounded-full bg-brand-400/25 blur-3xl animate-blob dark:bg-brand-500/25"
+    aria-hidden="true"
+  ></div>
+  <div
+    class="pointer-events-none absolute -right-24 -bottom-32 size-[28rem] rounded-full bg-lilac/25 blur-3xl animate-blob [animation-delay:-8s] dark:bg-deep-ember/40"
+    aria-hidden="true"
+  ></div>
+
+  <div class="glass-card relative w-full max-w-md p-8 animate-fade-up sm:p-10">
+    <!-- Marque -->
+    <div class="mb-8 flex flex-col items-center gap-3 text-center">
+      <span class="glass inline-flex size-16 items-center justify-center rounded-3xl">
+        <app-logo [size]="38" />
+      </span>
+      <div>
+        <h1 class="font-display text-xl font-extrabold tracking-wide text-ink dark:text-cream">
+          AFRILOVE <span class="text-brand-500 dark:text-brand-300">WORLD</span>
+        </h1>
+        <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+          Console d'administration
+        </p>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4" novalidate>
+      <!-- E-mail -->
+      <div>
+        <label for="email" class="mb-1.5 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+          Adresse e-mail
+        </label>
+        <div class="relative">
+          <lucide-icon
+            [img]="MailIcon"
+            [size]="16"
+            class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60"
+          />
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            class="input-glass pl-11"
+            placeholder="admin@afriloveworld.com"
+            autocomplete="email"
+          />
+        </div>
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p class="mt-1 text-xs font-semibold text-danger">Adresse e-mail invalide.</p>
+        }
+      </div>
+
+      <!-- Mot de passe -->
+      <div>
+        <label for="password" class="mb-1.5 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+          Mot de passe
+        </label>
+        <div class="relative">
+          <lucide-icon
+            [img]="LockIcon"
+            [size]="16"
+            class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60"
+          />
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            class="input-glass pr-12 pl-11"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="absolute top-1/2 right-3 -translate-y-1/2 rounded-lg p-1.5 text-ink-faint transition-colors hover:text-ink dark:text-cream-bezel2/60 dark:hover:text-cream"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+          >
+            <lucide-icon [img]="showPassword() ? EyeOffIcon : EyeIcon" [size]="16" />
+          </button>
+        </div>
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p class="mt-1 text-xs font-semibold text-danger">Mot de passe requis (6 caractères min.).</p>
+        }
+      </div>
+
+      <!-- Erreur d'authentification -->
+      @if (errorMessage()) {
+        <div
+          class="flex items-start gap-2.5 rounded-2xl border border-danger/30 bg-danger/8 px-4 py-3 animate-scale-in"
+          role="alert"
+        >
+          <lucide-icon [img]="AlertIcon" [size]="16" class="mt-0.5 shrink-0 text-danger" />
+          <p class="text-sm font-semibold text-danger">{{ errorMessage() }}</p>
+        </div>
+      }
+
+      <button type="submit" class="btn-brand mt-2 w-full" [disabled]="loading()">
+        @if (loading()) {
+          <lucide-icon [img]="LoaderIcon" [size]="16" class="animate-spin" />
+          Connexion…
+        } @else {
+          Se connecter
+        }
+      </button>
+    </form>
+
+    <p class="mt-6 text-center text-xs text-ink-faint dark:text-cream-bezel2/60">
+      Accès réservé à l'équipe AfriLove World.
+    </p>
+  </div>
+</div>

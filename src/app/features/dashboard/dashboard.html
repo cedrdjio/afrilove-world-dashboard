@@ -1,0 +1,197 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-5 animate-fade-up">
+  <!-- En-tête -->
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink sm:text-3xl dark:text-cream">
+        Bonjour {{ firstName() }} 👋
+      </h1>
+      <p class="mt-1 text-sm text-ink-muted capitalize dark:text-cream-bezel2">{{ todayLabel }}</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="glass inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold text-success">
+        <span class="live-dot"></span>
+        Temps réel · 30 s
+      </span>
+      <button
+        type="button"
+        class="btn-icon glass rounded-xl"
+        (click)="refresh()"
+        [class.animate-spin]="query.isFetching()"
+        aria-label="Actualiser les statistiques"
+      >
+        <lucide-icon [img]="RefreshIcon" [size]="17" />
+      </button>
+    </div>
+  </header>
+
+  @if (query.isPending()) {
+    <!-- Squelettes de chargement -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton h-40"></div>
+      }
+    </div>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div class="skeleton h-80 lg:col-span-2"></div>
+      <div class="skeleton h-80"></div>
+    </div>
+  } @else if (query.isError()) {
+    <div class="glass-card flex flex-col items-center gap-4 px-6 py-14 text-center">
+      <p class="font-display text-lg font-bold text-ink dark:text-cream">
+        Impossible de charger les statistiques
+      </p>
+      <p class="max-w-md text-sm text-ink-muted dark:text-cream-bezel2">
+        Vérifiez votre connexion ou vos droits d'accès, puis réessayez.
+      </p>
+      <button type="button" class="btn-brand" (click)="refresh()">
+        <lucide-icon [img]="RefreshIcon" [size]="16" />
+        Réessayer
+      </button>
+    </div>
+  } @else if (stats(); as s) {
+    <!-- Rangée KPI -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <app-stat-card
+        label="Utilisateurs inscrits"
+        [value]="s.total_users"
+        [icon]="UsersIcon"
+        [delta]="s.new_users_today > 0 ? '+' + s.new_users_today + ' aujourd’hui' : ''"
+      />
+      <app-stat-card
+        label="En ligne (5 min)"
+        [value]="s.online_users"
+        [icon]="WifiIcon"
+        accent="success"
+        [live]="true"
+      />
+      <app-stat-card
+        label="Abonnements actifs"
+        [value]="s.active_subscriptions"
+        [icon]="CrownIcon"
+        accent="lilac"
+      />
+      <app-stat-card
+        label="Revenus (abonnements actifs)"
+        [value]="s.revenue_cents"
+        [icon]="BanknoteIcon"
+        format="currency"
+      />
+    </div>
+
+    <!-- Bento principal -->
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <!-- Inscriptions 14 jours -->
+      <article class="glass-card p-5 lg:col-span-2">
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="font-display text-base font-bold text-ink dark:text-cream">Inscriptions</h2>
+            <p class="text-xs text-ink-muted dark:text-cream-bezel2">14 derniers jours</p>
+          </div>
+          <span
+            class="rounded-full bg-brand-500/12 px-3 py-1 font-display text-xs font-bold text-brand-600 dark:bg-brand-400/20 dark:text-brand-300"
+          >
+            {{ registrations14dTotal() | compactNumber }} au total
+          </span>
+        </div>
+        <app-registrations-chart [points]="s.registrations_14d" />
+      </article>
+
+      <!-- Colonne droite : activité du jour + à traiter -->
+      <div class="flex flex-col gap-4">
+        <article class="glass-card p-5">
+          <h2 class="mb-3 font-display text-base font-bold text-ink dark:text-cream">Aujourd'hui</h2>
+          <ul class="flex flex-col gap-3">
+            <li class="flex items-center gap-3">
+              <span class="inline-flex size-9 items-center justify-center rounded-xl bg-brand-500/12 text-brand-600 dark:bg-brand-400/20 dark:text-brand-300">
+                <lucide-icon [img]="HeartIcon" [size]="17" />
+              </span>
+              <span class="flex-1 text-sm text-ink-muted dark:text-cream-bezel2">Matchs</span>
+              <span class="font-display text-lg font-bold text-ink tabular-nums dark:text-cream">
+                {{ s.matches_today | compactNumber }}
+              </span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="inline-flex size-9 items-center justify-center rounded-xl bg-lilac/15 text-lilac-dark dark:bg-lilac/20 dark:text-lilac-light">
+                <lucide-icon [img]="MessageIcon" [size]="17" />
+              </span>
+              <span class="flex-1 text-sm text-ink-muted dark:text-cream-bezel2">Messages</span>
+              <span class="font-display text-lg font-bold text-ink tabular-nums dark:text-cream">
+                {{ s.messages_today | compactNumber }}
+              </span>
+            </li>
+            <li class="flex items-center gap-3">
+              <span class="inline-flex size-9 items-center justify-center rounded-xl bg-success/12 text-success dark:bg-success/20">
+                <lucide-icon [img]="UserPlusIcon" [size]="17" />
+              </span>
+              <span class="flex-1 text-sm text-ink-muted dark:text-cream-bezel2">Nouveaux comptes</span>
+              <span class="font-display text-lg font-bold text-ink tabular-nums dark:text-cream">
+                {{ s.new_users_today | compactNumber }}
+              </span>
+            </li>
+          </ul>
+        </article>
+
+        <article class="glass-card p-5">
+          <h2 class="mb-3 font-display text-base font-bold text-ink dark:text-cream">À traiter</h2>
+          <div class="flex flex-col gap-2">
+            <a
+              routerLink="/kyc"
+              class="group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-brand-100/60 dark:hover:bg-white/6"
+            >
+              <span class="inline-flex size-9 items-center justify-center rounded-xl bg-warning/12 text-warning dark:bg-warning/20">
+                <lucide-icon [img]="BadgeCheckIcon" [size]="17" />
+              </span>
+              <span class="flex-1 text-sm font-semibold text-ink dark:text-cream">KYC en attente</span>
+              <span class="font-display text-lg font-bold text-ink tabular-nums dark:text-cream">
+                {{ s.kyc_pending }}
+              </span>
+              <lucide-icon
+                [img]="ArrowRightIcon"
+                [size]="15"
+                class="text-ink-faint transition-transform group-hover:translate-x-0.5 dark:text-cream-bezel2/70"
+              />
+            </a>
+            <a
+              routerLink="/moderation"
+              class="group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-brand-100/60 dark:hover:bg-white/6"
+            >
+              <span class="inline-flex size-9 items-center justify-center rounded-xl bg-danger/12 text-danger dark:bg-danger/20">
+                <lucide-icon [img]="ShieldAlertIcon" [size]="17" />
+              </span>
+              <span class="flex-1 text-sm font-semibold text-ink dark:text-cream">Signalements</span>
+              <span class="font-display text-lg font-bold text-ink tabular-nums dark:text-cream">
+                {{ s.reports_pending }}
+              </span>
+              <lucide-icon
+                [img]="ArrowRightIcon"
+                [size]="15"
+                class="text-ink-faint transition-transform group-hover:translate-x-0.5 dark:text-cream-bezel2/70"
+              />
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <article class="glass-card flex flex-wrap items-center gap-3 p-5">
+      <h2 class="mr-2 font-display text-sm font-bold text-ink dark:text-cream">Actions rapides</h2>
+      <a routerLink="/users" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-sm font-semibold">
+        <lucide-icon [img]="UserRoundIcon" [size]="15" />
+        Utilisateurs
+      </a>
+      <a routerLink="/kyc" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-sm font-semibold">
+        <lucide-icon [img]="BadgeCheckIcon" [size]="15" />
+        Vérifications KYC
+      </a>
+      <a routerLink="/moderation" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-sm font-semibold">
+        <lucide-icon [img]="ShieldAlertIcon" [size]="15" />
+        Modération
+      </a>
+      <a routerLink="/notifications" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-sm font-semibold">
+        <lucide-icon [img]="BellRingIcon" [size]="15" />
+        Notifications
+      </a>
+    </article>
+  }
+</section>
