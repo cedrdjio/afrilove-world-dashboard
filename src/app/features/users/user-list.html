@@ -1,0 +1,179 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-4 animate-fade-up">
+  <!-- En-tête -->
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">
+        Utilisateurs
+      </h1>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+        {{ (result()?.total ?? 0) | compactNumber }} membre(s) — recherche, filtres et actions
+      </p>
+    </div>
+    <button
+      type="button"
+      class="btn-icon glass rounded-xl"
+      (click)="listQuery.refetch()"
+      [class.animate-spin]="listQuery.isFetching()"
+      aria-label="Actualiser la liste"
+    >
+      <lucide-icon [img]="RefreshIcon" [size]="17" />
+    </button>
+  </header>
+
+  <!-- Filtres -->
+  <div class="glass-card flex flex-wrap items-center gap-3 p-4">
+    <div class="relative min-w-56 flex-1">
+      <lucide-icon
+        [img]="SearchIcon"
+        [size]="15"
+        class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60"
+      />
+      <input
+        type="search"
+        [value]="users.query()"
+        (input)="onSearch($any($event.target).value)"
+        placeholder="Nom, e-mail, ville…"
+        class="input-glass !py-2.5 pl-10"
+        aria-label="Rechercher un membre"
+      />
+    </div>
+    <select
+      [value]="users.status()"
+      (change)="onStatus($any($event.target).value)"
+      class="input-glass w-auto !py-2.5"
+      aria-label="Filtrer par statut"
+    >
+      <option value="">Tous les statuts</option>
+      <option value="active">Actifs</option>
+      <option value="suspended">Suspendus</option>
+      <option value="banned">Bannis</option>
+      <option value="deleted">Supprimés</option>
+    </select>
+    <select
+      [value]="users.gender()"
+      (change)="onGender($any($event.target).value)"
+      class="input-glass w-auto !py-2.5"
+      aria-label="Filtrer par genre"
+    >
+      <option value="">Tous les genres</option>
+      <option value="homme">Hommes</option>
+      <option value="femme">Femmes</option>
+    </select>
+    <select
+      [value]="users.verified()"
+      (change)="onVerified($any($event.target).value)"
+      class="input-glass w-auto !py-2.5"
+      aria-label="Filtrer par vérification"
+    >
+      <option value="">Vérifiés ou non</option>
+      <option value="yes">Profils vérifiés</option>
+      <option value="no">Non vérifiés</option>
+    </select>
+  </div>
+
+  <!-- Tableau -->
+  @if (listQuery.isPending()) {
+    <div class="flex flex-col gap-2">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="skeleton h-16"></div>
+      }
+    </div>
+  } @else if (result(); as r) {
+    @if (r.users.length === 0) {
+      <div class="glass-card flex flex-col items-center gap-3 px-6 py-14 text-center">
+        <lucide-icon [img]="EmptyIcon" [size]="28" class="text-ink-faint dark:text-cream-bezel2/50" />
+        <p class="text-sm text-ink-muted dark:text-cream-bezel2">
+          Aucun membre ne correspond à ces critères.
+        </p>
+      </div>
+    } @else {
+      <div class="glass-card overflow-x-auto">
+        <table class="w-full min-w-3xl text-left text-sm">
+          <thead>
+            <tr class="border-b border-ink/6 text-[11px] tracking-wide text-ink-faint uppercase dark:border-white/8 dark:text-cream-bezel2/60">
+              <th class="px-5 py-3.5 font-bold">Membre</th>
+              <th class="px-3 py-3.5 font-bold">Statut</th>
+              <th class="px-3 py-3.5 font-bold">KYC</th>
+              <th class="px-3 py-3.5 font-bold">Genre</th>
+              <th class="px-3 py-3.5 font-bold">Localisation</th>
+              <th class="px-3 py-3.5 font-bold">Dernière activité</th>
+              <th class="px-5 py-3.5 text-right font-bold">Inscrit</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of r.users; track user.id) {
+              <tr
+                class="group cursor-pointer border-b border-ink/4 transition-colors last:border-0 hover:bg-brand-100/50 dark:border-white/5 dark:hover:bg-white/5"
+                [routerLink]="['/users', user.id]"
+              >
+                <td class="px-5 py-3">
+                  <div class="flex items-center gap-3">
+                    <app-avatar [src]="user.avatar_url" [name]="fullName(user)" [size]="40" />
+                    <div class="min-w-0">
+                      <p class="flex items-center gap-1.5 font-semibold text-ink dark:text-cream">
+                        <span class="truncate">{{ fullName(user) }}</span>
+                        @if (user.is_verified) {
+                          <lucide-icon [img]="VerifiedIcon" [size]="14" class="shrink-0 text-lilac" />
+                        }
+                        @if (user.is_premium) {
+                          <lucide-icon [img]="CrownIcon" [size]="13" class="shrink-0 text-warning" />
+                        }
+                      </p>
+                      <p class="truncate text-xs text-ink-muted dark:text-cream-bezel2">{{ user.email }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="statusClasses(user.account_status)">
+                    {{ statusLabel(user.account_status) }}
+                  </span>
+                </td>
+                <td class="px-3 py-3">
+                  <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="kycClasses(user.kyc_status)">
+                    {{ kycLabel(user.kyc_status) }}
+                  </span>
+                </td>
+                <td class="px-3 py-3 text-ink-muted dark:text-cream-bezel2">{{ genderLabel(user.gender) }}</td>
+                <td class="px-3 py-3 text-ink-muted dark:text-cream-bezel2">{{ locationOf(user) }}</td>
+                <td class="px-3 py-3 text-ink-muted dark:text-cream-bezel2">
+                  {{ user.last_active_at | relativeTime }}
+                </td>
+                <td class="px-5 py-3 text-right text-ink-muted dark:text-cream-bezel2">
+                  {{ user.created_at | relativeTime }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <footer class="flex items-center justify-between gap-3">
+        <p class="text-xs text-ink-muted dark:text-cream-bezel2">{{ rangeLabel() }}</p>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="btn-icon glass rounded-xl disabled:opacity-40"
+            [disabled]="users.page() === 0"
+            (click)="users.page.set(users.page() - 1)"
+            aria-label="Page précédente"
+          >
+            <lucide-icon [img]="PrevIcon" [size]="17" />
+          </button>
+          <span class="font-display text-xs font-bold text-ink dark:text-cream">
+            {{ users.page() + 1 }} / {{ totalPages() }}
+          </span>
+          <button
+            type="button"
+            class="btn-icon glass rounded-xl disabled:opacity-40"
+            [disabled]="users.page() + 1 >= totalPages()"
+            (click)="users.page.set(users.page() + 1)"
+            aria-label="Page suivante"
+          >
+            <lucide-icon [img]="NextIcon" [size]="17" />
+          </button>
+        </div>
+      </footer>
+    }
+  }
+</section>

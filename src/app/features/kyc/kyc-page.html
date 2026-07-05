@@ -1,0 +1,272 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-4 animate-fade-up">
+  <!-- En-tête -->
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">
+        Vérification KYC
+      </h1>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+        Revue manuelle des pièces d'identité et selfies
+      </p>
+    </div>
+    <button
+      type="button"
+      class="btn-icon glass rounded-xl"
+      (click)="listQuery.refetch()"
+      [class.animate-spin]="listQuery.isFetching()"
+      aria-label="Actualiser la file"
+    >
+      <lucide-icon [img]="RefreshIcon" [size]="17" />
+    </button>
+  </header>
+
+  <!-- Onglets + recherche -->
+  <div class="glass-card flex flex-wrap items-center gap-3 p-3">
+    <div class="glass inline-flex rounded-xl p-1" role="tablist" aria-label="Statut des demandes">
+      @for (tab of tabs; track tab) {
+        <button
+          type="button"
+          role="tab"
+          class="rounded-lg px-3.5 py-1.5 font-display text-xs font-bold transition-all"
+          [class]="
+            kyc.status() === tab
+              ? 'bg-brand-500 text-white shadow-md dark:bg-brand-400'
+              : 'text-ink-muted hover:text-ink dark:text-cream-bezel2 dark:hover:text-cream'
+          "
+          [attr.aria-selected]="kyc.status() === tab"
+          (click)="switchTab(tab)"
+        >
+          {{ tabLabel(tab) }}
+          <span class="ml-1 opacity-70">{{ countOf(tab) }}</span>
+        </button>
+      }
+    </div>
+    <div class="relative min-w-52 flex-1">
+      <lucide-icon
+        [img]="SearchIcon"
+        [size]="15"
+        class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60"
+      />
+      <input
+        type="search"
+        [value]="kyc.query()"
+        (input)="onSearch($any($event.target).value)"
+        placeholder="Nom, e-mail…"
+        class="input-glass !py-2.5 pl-10"
+        aria-label="Rechercher une demande"
+      />
+    </div>
+  </div>
+
+  <!-- Barre d'actions en masse -->
+  @if (kyc.status() === 'pending' && selectedCount() > 0) {
+    <div class="glass-card flex flex-wrap items-center gap-3 border-brand-400/40 p-3 animate-scale-in">
+      <p class="flex-1 text-sm font-semibold text-ink dark:text-cream">
+        {{ selectedCount() }} demande(s) sélectionnée(s)
+      </p>
+      <button type="button" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-xs font-bold !text-success" (click)="approve(selectionArray())" [disabled]="busy()">
+        <lucide-icon [img]="ApproveIcon" [size]="14" />
+        Tout approuver
+      </button>
+      <button type="button" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-xs font-bold !text-danger" (click)="askReject(selectionArray())" [disabled]="busy()">
+        <lucide-icon [img]="RejectIcon" [size]="14" />
+        Tout rejeter
+      </button>
+    </div>
+  }
+
+  <!-- Liste -->
+  @if (listQuery.isPending()) {
+    <div class="flex flex-col gap-2">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton h-20"></div>
+      }
+    </div>
+  } @else if (result(); as r) {
+    @if (r.items.length === 0) {
+      <div class="glass-card flex flex-col items-center gap-3 px-6 py-14 text-center">
+        <lucide-icon [img]="ShieldIcon" [size]="28" class="text-ink-faint dark:text-cream-bezel2/50" />
+        <p class="text-sm text-ink-muted dark:text-cream-bezel2">
+          Aucune demande {{ tabLabel(kyc.status()).toLowerCase() }} pour le moment.
+        </p>
+      </div>
+    } @else {
+      <div class="glass-card overflow-hidden">
+        @if (kyc.status() === 'pending') {
+          <div class="border-b border-ink/6 px-5 py-2.5 dark:border-white/8">
+            <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-bold text-ink-muted dark:text-cream-bezel2">
+              <input
+                type="checkbox"
+                [checked]="selectedCount() === r.items.length && r.items.length > 0"
+                (change)="toggleAll()"
+                class="size-4 accent-brand-500"
+              />
+              Tout sélectionner sur cette page
+            </label>
+          </div>
+        }
+        <ul>
+          @for (item of r.items; track item.id) {
+            <li class="flex items-center gap-3 border-b border-ink/4 px-4 py-3 transition-colors last:border-0 hover:bg-brand-100/40 sm:px-5 dark:border-white/5 dark:hover:bg-white/5">
+              @if (kyc.status() === 'pending') {
+                <input
+                  type="checkbox"
+                  [checked]="selection().has(item.id)"
+                  (change)="toggleSelected(item.id)"
+                  class="size-4 shrink-0 accent-brand-500"
+                  [attr.aria-label]="'Sélectionner ' + fullName(item)"
+                />
+              }
+              <button type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" (click)="current.set(item)">
+                <app-signed-image [path]="item.selfie_path" alt="Selfie" class="size-12 shrink-0 rounded-xl" />
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-semibold text-ink dark:text-cream">{{ fullName(item) }}</span>
+                  <span class="block truncate text-xs text-ink-muted dark:text-cream-bezel2">
+                    {{ docTypeLabel(item.doc_type) }} · soumis {{ item.submitted_at | relativeTime }}
+                    @if (item.rejection_reason) { · {{ item.rejection_reason }} }
+                  </span>
+                </span>
+              </button>
+              @if (kyc.status() === 'pending') {
+                <div class="flex shrink-0 items-center gap-1.5">
+                  <button type="button" class="btn-icon !size-9 !text-success" (click)="approve([item.id])" [disabled]="busy()" aria-label="Approuver">
+                    <lucide-icon [img]="ApproveIcon" [size]="17" />
+                  </button>
+                  <button type="button" class="btn-icon !size-9 !text-danger" (click)="askReject([item.id])" [disabled]="busy()" aria-label="Rejeter">
+                    <lucide-icon [img]="RejectIcon" [size]="17" />
+                  </button>
+                </div>
+              } @else {
+                <span
+                  class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                  [class]="item.status === 'approved' ? 'bg-success/12 text-success' : 'bg-danger/12 text-danger'"
+                >
+                  {{ tabLabel(item.status) }}
+                </span>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <footer class="flex items-center justify-end gap-2">
+          <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="kyc.page() === 0" (click)="kyc.page.set(kyc.page() - 1)" aria-label="Page précédente">
+            <lucide-icon [img]="PrevIcon" [size]="17" />
+          </button>
+          <span class="font-display text-xs font-bold text-ink dark:text-cream">{{ kyc.page() + 1 }} / {{ totalPages() }}</span>
+          <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="kyc.page() + 1 >= totalPages()" (click)="kyc.page.set(kyc.page() + 1)" aria-label="Page suivante">
+            <lucide-icon [img]="NextIcon" [size]="17" />
+          </button>
+        </footer>
+      }
+    }
+  }
+</section>
+
+<!-- Panneau de revue -->
+@if (current(); as item) {
+  <div class="fixed inset-0 z-[80] flex justify-end bg-deep-black/45 backdrop-blur-sm" (click)="current.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card flex h-full w-full max-w-lg flex-col !rounded-none p-0 animate-scale-in sm:m-3 sm:h-[calc(100%-1.5rem)] sm:!rounded-3xl" (click)="$event.stopPropagation()">
+      <header class="flex items-center gap-3 border-b border-ink/6 px-5 py-4 dark:border-white/8">
+        <app-avatar [src]="item.avatar_url" [name]="fullName(item)" [size]="40" />
+        <div class="min-w-0 flex-1">
+          <p class="truncate font-display text-sm font-bold text-ink dark:text-cream">{{ fullName(item) }}</p>
+          <p class="truncate text-xs text-ink-muted dark:text-cream-bezel2">
+            {{ item.email }} · {{ docTypeLabel(item.doc_type) }}
+          </p>
+        </div>
+        <a [routerLink]="['/users', item.profile_id]" class="btn-icon" aria-label="Ouvrir la fiche membre">
+          <lucide-icon [img]="OpenIcon" [size]="16" />
+        </a>
+        <button type="button" class="btn-icon" (click)="current.set(null)" aria-label="Fermer">
+          <lucide-icon [img]="CloseIcon" [size]="17" />
+        </button>
+      </header>
+
+      <div class="flex-1 overflow-y-auto p-5">
+        <p class="mb-2 text-[11px] font-bold tracking-wide text-ink-faint uppercase dark:text-cream-bezel2/60">Selfie</p>
+        <app-signed-image [path]="item.selfie_path" alt="Selfie de vérification" class="aspect-square w-full max-w-64 rounded-2xl" />
+
+        <p class="mt-5 mb-2 text-[11px] font-bold tracking-wide text-ink-faint uppercase dark:text-cream-bezel2/60">
+          Document — recto
+        </p>
+        <app-signed-image [path]="item.id_front_path" alt="Document recto" class="aspect-[3/2] w-full rounded-2xl" />
+
+        @if (item.id_back_path) {
+          <p class="mt-5 mb-2 text-[11px] font-bold tracking-wide text-ink-faint uppercase dark:text-cream-bezel2/60">
+            Document — verso
+          </p>
+          <app-signed-image [path]="item.id_back_path" alt="Document verso" class="aspect-[3/2] w-full rounded-2xl" />
+        }
+
+        <p class="mt-4 text-xs text-ink-muted dark:text-cream-bezel2">
+          Soumis {{ item.submitted_at | relativeTime }}
+          @if (item.reviewed_at) { · revu {{ item.reviewed_at | relativeTime }} }
+        </p>
+        @if (item.rejection_reason) {
+          <p class="mt-2 rounded-xl bg-danger/8 px-3 py-2 text-xs font-semibold text-danger">
+            Motif de rejet : {{ item.rejection_reason }}
+          </p>
+        }
+      </div>
+
+      @if (item.status === 'pending') {
+        <footer class="flex gap-2 border-t border-ink/6 px-5 py-4 dark:border-white/8">
+          <button
+            type="button"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-success px-4 py-3 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60"
+            (click)="approve([item.id])"
+            [disabled]="busy()"
+          >
+            @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } @else { <lucide-icon [img]="ApproveIcon" [size]="16" /> }
+            Approuver
+          </button>
+          <button
+            type="button"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-danger px-4 py-3 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60"
+            (click)="askReject([item.id])"
+            [disabled]="busy()"
+          >
+            <lucide-icon [img]="RejectIcon" [size]="16" />
+            Rejeter
+          </button>
+        </footer>
+      }
+    </div>
+  </div>
+}
+
+<!-- Dialogue de rejet (motif obligatoire) -->
+@if (rejectTarget(); as ids) {
+  <div class="fixed inset-0 z-[90] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="rejectTarget.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-md p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-ink dark:text-cream">
+        Rejeter {{ ids.length > 1 ? ids.length + ' demandes' : 'cette demande' }} ?
+      </h2>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+        Le motif est obligatoire — il sera visible par le membre dans l'application.
+      </p>
+      <textarea
+        [value]="rejectReason()"
+        (input)="rejectReason.set($any($event.target).value)"
+        rows="3"
+        placeholder="Ex. : document illisible, selfie non conforme…"
+        class="input-glass mt-4"
+      ></textarea>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="rejectTarget.set(null)">Annuler</button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-2xl bg-danger px-5 py-2.5 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60"
+          (click)="confirmReject()"
+          [disabled]="busy() || rejectReason().trim() === ''"
+        >
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> }
+          Confirmer le rejet
+        </button>
+      </div>
+    </div>
+  </div>
+}

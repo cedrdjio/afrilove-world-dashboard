@@ -93,4 +93,29 @@ src/app/
   abonnements (RPC `admin_recent_activity`, rafraîchi toutes les 30 s)
 - RPC `admin_dashboard_charts(p_days)` — séries temporelles agrégées côté SQL
 
-Les sprints suivants (A2 utilisateurs, A3 KYC…) s'appuient sur ce socle.
+## Sprint A2 — livré (Utilisateurs)
+
+- Annuaire complet : recherche débouncée (nom, e-mail, ville), filtres
+  persistants (statut, genre, vérification), pagination
+- Fiche membre : profil complet, photos, centres d'intérêt/langues,
+  abonnement, appareils, historique de connexion (auth.audit_log_entries),
+  signalements reçus/émis, matchs & conversations
+- Lecture des conversations à des fins de modération (action journalisée)
+- Actions : vérifier le profil, suspendre / bannir / réactiver (motif
+  obligatoire journalisé), modifier le profil, confirmer l'e-mail,
+  réinitialiser le mot de passe (e-mail Supabase), supprimer (super admin,
+  cascade auth), export JSON
+- Chaque action est tracée dans `admin_audit_log` (visible sur la fiche)
+- Statut `suspended` ajouté au modèle (`profiles_account_status_check`)
+
+## Sprint A3 — livré (KYC)
+
+- File de vérification par statut (en attente / approuvés / rejetés) avec
+  compteurs, recherche et pagination
+- Aperçus selfie + document recto/verso via URLs signées (bucket privé
+  `kyc-documents`, policy de lecture réservée aux admins)
+- Panneau de revue plein écran avec lien vers la fiche membre
+- Approbation / rejet unitaire ou en masse — motif obligatoire pour le
+  rejet, `profiles.is_verified` synchronisé par trigger, tout est journalisé
+
+Les sprints suivants (A4 modération, A5 premium…) s'appuient sur ce socle.

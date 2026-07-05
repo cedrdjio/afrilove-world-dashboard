@@ -32,17 +32,29 @@ export const routes: Routes = [
       },
       {
         path: 'users',
-        title: 'Utilisateurs',
         canActivate: [roleGuard('support')],
-        data: { breadcrumb: 'Utilisateurs', sprint: 'A2' },
-        loadComponent: comingSoon,
+        data: { breadcrumb: 'Utilisateurs' },
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            title: 'Utilisateurs',
+            loadComponent: () => import('./features/users/user-list').then((m) => m.UserList),
+          },
+          {
+            path: ':id',
+            title: 'Fiche membre',
+            data: { breadcrumb: 'Fiche membre' },
+            loadComponent: () => import('./features/users/user-detail').then((m) => m.UserDetail),
+          },
+        ],
       },
       {
         path: 'kyc',
         title: 'Vérification KYC',
         canActivate: [roleGuard('moderator')],
-        data: { breadcrumb: 'Vérification KYC', sprint: 'A3' },
-        loadComponent: comingSoon,
+        data: { breadcrumb: 'Vérification KYC' },
+        loadComponent: () => import('./features/kyc/kyc-page').then((m) => m.KycPage),
       },
       {
         path: 'moderation',

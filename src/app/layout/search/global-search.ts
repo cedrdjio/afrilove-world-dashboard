@@ -95,7 +95,7 @@ export class GlobalSearch {
         'Profil sans nom',
       detail: [profile.email, profile.city].filter(Boolean).join(' · '),
       icon: UserRound,
-      path: '/users',
+      path: `/users/${profile.id}`,
       verified: profile.is_verified,
     })),
   );

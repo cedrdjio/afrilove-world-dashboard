@@ -26,13 +26,12 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Communauté',
     items: [
-      { label: 'Utilisateurs', path: '/users', icon: Users, minRole: 'support', sprint: 'A2' },
+      { label: 'Utilisateurs', path: '/users', icon: Users, minRole: 'support' },
       {
         label: 'Vérification KYC',
         path: '/kyc',
         icon: BadgeCheck,
         minRole: 'moderator',
-        sprint: 'A3',
         badge: (stats) => stats.kyc_pending,
       },
       {

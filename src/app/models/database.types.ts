@@ -835,8 +835,52 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_conversation_messages: {
+        Args: { p_limit?: number; p_match_id: string }
+        Returns: Json
+      }
       admin_dashboard_charts: { Args: { p_days?: number }; Returns: Json }
       admin_dashboard_stats: { Args: never; Returns: Json }
+      admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_get_user_details: { Args: { p_user_id: string }; Returns: Json }
+      admin_list_kyc: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
+      admin_list_users: {
+        Args: {
+          p_gender?: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+          p_verified?: boolean
+        }
+        Returns: Json
+      }
+      admin_review_kyc: {
+        Args: { p_ids: string[]; p_reason?: string; p_status: string }
+        Returns: number
+      }
+      admin_role_level: { Args: never; Returns: number }
+      admin_set_account_status: {
+        Args: { p_reason?: string; p_status: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_set_profile_verified: {
+        Args: { p_user_id: string; p_verified: boolean }
+        Returns: undefined
+      }
+      admin_update_profile: {
+        Args: { p_patch: Json; p_user_id: string }
+        Returns: Json
+      }
+      admin_verify_email: { Args: { p_user_id: string }; Returns: undefined }
       admin_recent_activity: {
         Args: { p_limit?: number }
         Returns: {
