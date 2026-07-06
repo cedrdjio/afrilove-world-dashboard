@@ -910,6 +910,15 @@ export type Database = {
         Returns: undefined
       }
       admin_list_admins: { Args: never; Returns: Json }
+      admin_cancel_invite: { Args: { p_email: string }; Returns: undefined }
+      admin_list_photos: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string; p_status?: string }
+        Returns: Json
+      }
+      admin_moderate_photo: {
+        Args: { p_action: string; p_note?: string; p_photo_id: string }
+        Returns: undefined
+      }
       admin_list_templates: { Args: never; Returns: Json }
       admin_list_tickets: {
         Args: { p_limit?: number; p_offset?: number; p_query?: string; p_status?: string }

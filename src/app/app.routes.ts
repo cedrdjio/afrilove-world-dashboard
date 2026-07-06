@@ -64,6 +64,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/moderation/moderation-page').then((m) => m.ModerationPage),
       },
       {
+        path: 'photos',
+        title: 'Modération des images',
+        canActivate: [roleGuard('moderator')],
+        data: { breadcrumb: 'Modération des images' },
+        loadComponent: () => import('./features/photos/photos-page').then((m) => m.PhotosPage),
+      },
+      {
         path: 'subscriptions',
         title: 'Abonnements',
         canActivate: [roleGuard('admin')],
