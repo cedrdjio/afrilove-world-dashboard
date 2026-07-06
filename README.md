@@ -118,4 +118,21 @@ src/app/
 - Approbation / rejet unitaire ou en masse — motif obligatoire pour le
   rejet, `profiles.is_verified` synchronisé par trigger, tout est journalisé
 
-Les sprints suivants (A4 modération, A5 premium…) s'appuient sur ce socle.
+## Sprint A4 — livré (Modération)
+
+- File des signalements par statut (en attente / résolus / rejetés) avec
+  compteurs et recherche, badge « N signalements » sur les récidivistes
+- Statistiques de modération (signalements, avertissements, suspendus, bannis)
+- Résolution / rejet unitaire, avertissement, ban temporaire (durée), ban
+  définitif — chaque action résout aussi le signalement et est journalisée
+
+## Sprint A5 — livré (Premium)
+
+- KPIs revenus : abonnés actifs, MRR (normalisé 30 j), revenu cumulé
+- Onglet Abonnés : liste filtrable (actifs/expirés/annulés), annulation et
+  remboursement
+- Onglet Plans : cartes tarifaires, création/édition, activation/désactivation
+- Onglet Coupons : CRUD complet (code, remise %, plan, quota, validité)
+- Upgrade premium manuel depuis la fiche membre (`admin_grant_subscription`)
+
+Les sprints suivants (A6 contenu, A7 notifications…) s'appuient sur ce socle.

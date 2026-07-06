@@ -39,7 +39,6 @@ export const NAV_SECTIONS: NavSection[] = [
         path: '/moderation',
         icon: ShieldAlert,
         minRole: 'moderator',
-        sprint: 'A4',
         badge: (stats) => stats.reports_pending,
       },
       { label: 'Contenu', path: '/content', icon: Layers, minRole: 'admin', sprint: 'A6' },
@@ -48,7 +47,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Revenus',
     items: [
-      { label: 'Abonnements', path: '/subscriptions', icon: Crown, minRole: 'admin', sprint: 'A5' },
+      { label: 'Abonnements', path: '/subscriptions', icon: Crown, minRole: 'admin' },
     ],
   },
   {

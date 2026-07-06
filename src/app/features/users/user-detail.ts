@@ -39,6 +39,7 @@ import {
 } from '../../models/users.model';
 import { Avatar } from '../../shared/ui/avatar/avatar';
 import { RelativeTimePipe } from '../../shared/pipes/relative-time.pipe';
+import { PremiumService } from '../premium/premium.service';
 import { UsersService } from './users.service';
 
 /** Fiche membre : profil complet, historique, conversations et actions admin. */
@@ -53,6 +54,7 @@ export class UserDetail {
   readonly id = input.required<string>();
 
   protected readonly users = inject(UsersService);
+  protected readonly premium = inject(PremiumService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
 
@@ -98,6 +100,8 @@ export class UserDetail {
   protected readonly statusReason = signal('');
   protected readonly editOpen = signal(false);
   protected readonly deleteOpen = signal(false);
+  protected readonly upgradeOpen = signal(false);
+  protected readonly selectedPlan = signal('');
   protected readonly busy = signal(false);
 
   // Panneau conversation
@@ -210,6 +214,28 @@ export class UserDetail {
       return;
     }
     await this.run(() => this.users.sendPasswordReset(email));
+  }
+
+  protected openUpgrade(): void {
+    // Précharge la liste des plans et propose le premier plan actif.
+    void this.premium.plansQuery.refetch();
+    const firstActive = this.premium.plansQuery.data()?.find((plan) => plan.is_active);
+    this.selectedPlan.set(firstActive?.key ?? '');
+    this.upgradeOpen.set(true);
+  }
+
+  protected async confirmUpgrade(): Promise<void> {
+    const plan = this.selectedPlan();
+    if (!plan) {
+      this.toast.warning('Choisissez un plan');
+      return;
+    }
+    await this.run(async () => {
+      await this.premium.grantSubscription(this.id(), plan);
+      this.users.invalidate(this.id());
+      this.upgradeOpen.set(false);
+      this.toast.success('Abonnement premium accordé');
+    });
   }
 
   protected async confirmDelete(): Promise<void> {

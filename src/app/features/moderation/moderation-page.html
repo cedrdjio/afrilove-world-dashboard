@@ -1,0 +1,231 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-4 animate-fade-up">
+  <!-- En-tête -->
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">
+        Modération
+      </h1>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+        Signalements de la communauté, avertissements et bannissements
+      </p>
+    </div>
+    <button
+      type="button"
+      class="btn-icon glass rounded-xl"
+      (click)="listQuery.refetch()"
+      [class.animate-spin]="listQuery.isFetching()"
+      aria-label="Actualiser la file"
+    >
+      <lucide-icon [img]="RefreshIcon" [size]="17" />
+    </button>
+  </header>
+
+  <!-- Statistiques -->
+  @if (stats(); as s) {
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div class="glass-card p-4">
+        <p class="font-display text-2xl font-bold text-danger tabular-nums">{{ s.reports_pending }}</p>
+        <p class="text-xs text-ink-muted dark:text-cream-bezel2">Signalements en attente</p>
+      </div>
+      <div class="glass-card p-4">
+        <p class="font-display text-2xl font-bold text-ink tabular-nums dark:text-cream">{{ s.reports_total }}</p>
+        <p class="text-xs text-ink-muted dark:text-cream-bezel2">Signalements au total</p>
+      </div>
+      <div class="glass-card p-4">
+        <p class="font-display text-2xl font-bold text-warning tabular-nums">{{ s.warnings_total }}</p>
+        <p class="text-xs text-ink-muted dark:text-cream-bezel2">Avertissements émis</p>
+      </div>
+      <div class="glass-card p-4">
+        <p class="font-display text-2xl font-bold text-warning tabular-nums">{{ s.suspended_users }}</p>
+        <p class="text-xs text-ink-muted dark:text-cream-bezel2">Comptes suspendus</p>
+      </div>
+      <div class="glass-card p-4">
+        <p class="font-display text-2xl font-bold text-danger tabular-nums">{{ s.banned_users }}</p>
+        <p class="text-xs text-ink-muted dark:text-cream-bezel2">Comptes bannis</p>
+      </div>
+    </div>
+  }
+
+  <!-- Onglets + recherche -->
+  <div class="glass-card flex flex-wrap items-center gap-3 p-3">
+    <div class="glass inline-flex rounded-xl p-1" role="tablist" aria-label="Statut des signalements">
+      @for (tab of tabs; track tab) {
+        <button
+          type="button"
+          role="tab"
+          class="rounded-lg px-3.5 py-1.5 font-display text-xs font-bold transition-all"
+          [class]="
+            moderation.status() === tab
+              ? 'bg-brand-500 text-white shadow-md dark:bg-brand-400'
+              : 'text-ink-muted hover:text-ink dark:text-cream-bezel2 dark:hover:text-cream'
+          "
+          [attr.aria-selected]="moderation.status() === tab"
+          (click)="moderation.setStatus(tab)"
+        >
+          {{ tabLabel(tab) }}
+          <span class="ml-1 opacity-70">{{ countOf(tab) }}</span>
+        </button>
+      }
+    </div>
+    <div class="relative min-w-52 flex-1">
+      <lucide-icon
+        [img]="SearchIcon"
+        [size]="15"
+        class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60"
+      />
+      <input
+        type="search"
+        [value]="moderation.query()"
+        (input)="onSearch($any($event.target).value)"
+        placeholder="Motif, membre signalé…"
+        class="input-glass !py-2.5 pl-10"
+        aria-label="Rechercher un signalement"
+      />
+    </div>
+  </div>
+
+  <!-- Liste -->
+  @if (listQuery.isPending()) {
+    <div class="flex flex-col gap-2">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton h-24"></div>
+      }
+    </div>
+  } @else if (result(); as r) {
+    @if (r.items.length === 0) {
+      <div class="glass-card flex flex-col items-center gap-3 px-6 py-14 text-center">
+        <lucide-icon [img]="EmptyIcon" [size]="28" class="text-ink-faint dark:text-cream-bezel2/50" />
+        <p class="text-sm text-ink-muted dark:text-cream-bezel2">
+          Aucun signalement {{ tabLabel(moderation.status()).toLowerCase() }}.
+        </p>
+      </div>
+    } @else {
+      <ul class="flex flex-col gap-3">
+        @for (report of r.items; track report.id) {
+          <li class="glass-card flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
+            <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-danger/12 text-danger">
+              <lucide-icon [img]="FlagIcon" [size]="18" />
+            </span>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-display text-sm font-bold text-ink dark:text-cream">{{ report.reason }}</span>
+                @if ((report.reported.total_reports ?? 0) > 1) {
+                  <span class="rounded-full bg-danger/12 px-2 py-0.5 text-[10px] font-bold text-danger">
+                    {{ report.reported.total_reports }} signalements
+                  </span>
+                }
+                <span class="text-xs text-ink-faint dark:text-cream-bezel2/60">{{ report.created_at | relativeTime }}</span>
+              </div>
+              @if (report.details) {
+                <p class="mt-1 text-sm text-ink-soft dark:text-cream-bezel2">{{ report.details }}</p>
+              }
+
+              <div class="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-ink-muted dark:text-cream-bezel2">
+                <span class="inline-flex items-center gap-1.5">
+                  <app-avatar [src]="report.reported.avatar" [name]="report.reported.name" [size]="20" />
+                  Membre :
+                  @if (report.reported.id) {
+                    <a [routerLink]="['/users', report.reported.id]" class="inline-flex items-center gap-1 font-semibold text-brand-500 hover:underline dark:text-brand-300">
+                      {{ report.reported.name || report.reported.email || 'Profil' }}
+                      <lucide-icon [img]="OpenIcon" [size]="12" />
+                    </a>
+                  } @else {
+                    <span>Supprimé</span>
+                  }
+                  @if (report.reported.account_status) {
+                    <span
+                      class="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      [class]="report.reported.account_status === 'active' ? 'bg-success/12 text-success' : 'bg-danger/12 text-danger'"
+                    >
+                      {{ reportedStatusLabel(report.reported.account_status) }}
+                    </span>
+                  }
+                </span>
+                <span>Par : {{ report.reporter.name || 'Anonyme' }}</span>
+              </div>
+            </div>
+
+            @if (report.status === 'pending') {
+              <div class="flex shrink-0 flex-wrap items-center gap-1.5">
+                <button type="button" class="btn-icon glass w-auto gap-1.5 rounded-xl px-2.5 text-xs font-bold !text-warning" (click)="openAction(report, 'warn')" [disabled]="busy()">
+                  <lucide-icon [img]="WarnIcon" [size]="13" /> Avertir
+                </button>
+                <button type="button" class="btn-icon glass w-auto gap-1.5 rounded-xl px-2.5 text-xs font-bold !text-warning" (click)="openAction(report, 'temp_ban')" [disabled]="busy()">
+                  <lucide-icon [img]="TempBanIcon" [size]="13" /> Ban temp.
+                </button>
+                <button type="button" class="btn-icon glass w-auto gap-1.5 rounded-xl px-2.5 text-xs font-bold !text-danger" (click)="openAction(report, 'ban')" [disabled]="busy()">
+                  <lucide-icon [img]="PermBanIcon" [size]="13" /> Bannir
+                </button>
+                <span class="mx-1 h-5 w-px bg-ink/10 dark:bg-white/10"></span>
+                <button type="button" class="btn-icon !size-9 !text-success" (click)="review([report.id], 'resolved')" [disabled]="busy()" aria-label="Résoudre">
+                  <lucide-icon [img]="ResolveIcon" [size]="17" />
+                </button>
+                <button type="button" class="btn-icon !size-9 !text-ink-faint" (click)="review([report.id], 'dismissed')" [disabled]="busy()" aria-label="Rejeter">
+                  <lucide-icon [img]="DismissIcon" [size]="17" />
+                </button>
+              </div>
+            } @else {
+              <span
+                class="shrink-0 self-start rounded-full px-2.5 py-1 text-[11px] font-bold"
+                [class]="report.status === 'resolved' ? 'bg-success/12 text-success' : 'bg-ink-faint/15 text-ink-faint dark:bg-white/10 dark:text-cream-bezel2/70'"
+              >
+                {{ tabLabel(report.status) }}
+              </span>
+            }
+          </li>
+        }
+      </ul>
+
+      @if (totalPages() > 1) {
+        <footer class="flex items-center justify-end gap-2">
+          <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="moderation.page() === 0" (click)="moderation.page.set(moderation.page() - 1)" aria-label="Page précédente">‹</button>
+          <span class="font-display text-xs font-bold text-ink dark:text-cream">{{ moderation.page() + 1 }} / {{ totalPages() }}</span>
+          <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="moderation.page() + 1 >= totalPages()" (click)="moderation.page.set(moderation.page() + 1)" aria-label="Page suivante">›</button>
+        </footer>
+      }
+    }
+  }
+</section>
+
+<!-- Dialogue d'action -->
+@if (actionTarget(); as report) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="actionTarget.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-md p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-ink dark:text-cream">{{ actionTitle() }}</h2>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+        Cible : <strong class="text-ink dark:text-cream">{{ report.reported.name || report.reported.email || 'Membre' }}</strong>.
+        Le signalement sera marqué comme résolu.
+      </p>
+
+      @if (actionKind() === 'temp_ban') {
+        <label class="mt-4 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+          Durée (jours)
+          <input type="number" min="1" max="365" [value]="actionDays()" (input)="actionDays.set(+$any($event.target).value)" class="input-glass mt-1 !py-2.5" />
+        </label>
+      }
+
+      <textarea
+        [value]="actionReason()"
+        (input)="actionReason.set($any($event.target).value)"
+        rows="3"
+        [placeholder]="actionKind() === 'warn' ? 'Message de l’avertissement (optionnel)' : 'Motif (obligatoire, journalisé)'"
+        class="input-glass mt-4"
+      ></textarea>
+
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="actionTarget.set(null)">Annuler</button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60"
+          [class]="actionKind() === 'warn' ? 'bg-warning' : 'bg-danger'"
+          (click)="confirmAction()"
+          [disabled]="busy()"
+        >
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> }
+          Confirmer
+        </button>
+      </div>
+    </div>
+  </div>
+}

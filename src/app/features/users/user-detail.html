@@ -88,6 +88,10 @@
             <lucide-icon [img]="EditIcon" [size]="14" />
             Modifier
           </button>
+          <button type="button" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-xs font-bold !text-warning" (click)="openUpgrade()" [disabled]="busy()">
+            <lucide-icon [img]="CrownIcon" [size]="14" />
+            Premium
+          </button>
         }
         <button type="button" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-xs font-bold" (click)="exportJson()">
           <lucide-icon [img]="ExportIcon" [size]="14" />
@@ -487,6 +491,36 @@
         >
           @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> }
           Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Dialogue upgrade premium -->
+@if (upgradeOpen()) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="upgradeOpen.set(false)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-md p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-ink dark:text-cream">Accorder un abonnement premium</h2>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+        Upgrade manuel pour <strong class="text-ink dark:text-cream">{{ fullName() }}</strong>. La durée s'ajoute à un éventuel premium en cours.
+      </p>
+      <label class="mt-4 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+        Plan
+        <select [value]="selectedPlan()" (change)="selectedPlan.set($any($event.target).value)" class="input-glass mt-1 !py-2.5">
+          <option value="">— Choisir —</option>
+          @for (plan of premium.plansQuery.data() ?? []; track plan.key) {
+            @if (plan.is_active) {
+              <option [value]="plan.key">{{ plan.label }} ({{ plan.duration_days }} j)</option>
+            }
+          }
+        </select>
+      </label>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="upgradeOpen.set(false)">Annuler</button>
+        <button type="button" class="btn-brand !py-2.5" (click)="confirmUpgrade()" [disabled]="busy()">
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> }
+          Accorder
         </button>
       </div>
     </div>

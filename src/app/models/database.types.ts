@@ -41,6 +41,69 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_warnings: {
+        Row: {
+          admin_id: string | null
+          created_at: string
+          id: string
+          message: string
+          profile_id: string
+        }
+        Insert: {
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          profile_id: string
+        }
+        Update: {
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          profile_id?: string
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          discount_percent: number
+          is_active: boolean
+          max_redemptions: number | null
+          plan_key: string | null
+          redeemed_count: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_percent: number
+          is_active?: boolean
+          max_redemptions?: number | null
+          plan_key?: string | null
+          redeemed_count?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_percent?: number
+          is_active?: boolean
+          max_redemptions?: number | null
+          plan_key?: string | null
+          redeemed_count?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -881,6 +944,34 @@ export type Database = {
         Returns: Json
       }
       admin_verify_email: { Args: { p_user_id: string }; Returns: undefined }
+      admin_cancel_subscription: {
+        Args: { p_refund?: boolean; p_subscription_id: string }
+        Returns: undefined
+      }
+      admin_delete_coupon: { Args: { p_code: string }; Returns: undefined }
+      admin_grant_subscription: {
+        Args: { p_plan_key: string; p_user_id: string }
+        Returns: string
+      }
+      admin_list_coupons: { Args: never; Returns: Json }
+      admin_list_reports: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string; p_status?: string }
+        Returns: Json
+      }
+      admin_list_subscriptions: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string; p_status?: string }
+        Returns: Json
+      }
+      admin_moderation_stats: { Args: never; Returns: Json }
+      admin_premium_stats: { Args: never; Returns: Json }
+      admin_review_reports: { Args: { p_ids: string[]; p_status: string }; Returns: number }
+      admin_temp_ban: {
+        Args: { p_days: number; p_reason: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_upsert_coupon: { Args: { p_code: string; p_patch: Json }; Returns: undefined }
+      admin_upsert_plan: { Args: { p_key: string; p_patch: Json }; Returns: undefined }
+      admin_warn_user: { Args: { p_message: string; p_user_id: string }; Returns: undefined }
       admin_recent_activity: {
         Args: { p_limit?: number }
         Returns: {
