@@ -135,4 +135,24 @@ src/app/
 - Onglet Coupons : CRUD complet (code, remise %, plan, quota, validité)
 - Upgrade premium manuel depuis la fiche membre (`admin_grant_subscription`)
 
-Les sprints suivants (A6 contenu, A7 notifications…) s'appuient sur ce socle.
+## Sprint A6 — livré (Contenu)
+
+- 9 catalogues éditables **branchés sur la vraie base** : centres d'intérêt,
+  langues, religions, objectifs de relation, professions, niveaux d'études,
+  style de vie, pays, villes
+- Nouvelles tables réelles seedées : `countries` (27 pays afro-européens),
+  `cities` (~40 villes), `lifestyle_options`, `occupations`
+- CRUD complet (créer / éditer / activer / supprimer) via RPC génériques
+  whitelistées (`admin_catalog_list/upsert/delete`), recherche instantanée
+
+## Sprint A7 — livré (Notifications)
+
+- Compositeur avec aperçu type push en direct
+- Ciblage **réel** : tous, par pays (liste des pays du catalogue), par genre,
+  premium / non-premium, par tranche d'âge
+- Aperçu du nombre de destinataires réels avant envoi (`admin_audience_count`)
+- Envoi immédiat (une notification par membre ciblé) ou programmé
+- Historique des diffusions + annulation d'un envoi programmé
+
+Toutes les données proviennent de Supabase — aucun contenu codé en dur.
+Les sprints suivants (A8 analytics, A9 système…) s'appuient sur ce socle.

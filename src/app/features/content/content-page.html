@@ -1,0 +1,147 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-4 animate-fade-up">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">
+        Contenu
+      </h1>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+        Listes de référence utilisées par l'application — tout est éditable
+      </p>
+    </div>
+    <button type="button" class="btn-icon glass rounded-xl" (click)="listQuery.refetch()" [class.animate-spin]="listQuery.isFetching()" aria-label="Actualiser">
+      <lucide-icon [img]="RefreshIcon" [size]="17" />
+    </button>
+  </header>
+
+  <div class="flex flex-col gap-4 lg:flex-row">
+    <!-- Sélecteur de catalogue -->
+    <nav class="glass-card flex shrink-0 flex-row gap-1 overflow-x-auto p-2 lg:w-60 lg:flex-col" aria-label="Catalogues">
+      @for (def of catalogs; track def.key) {
+        <button
+          type="button"
+          class="flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors"
+          [class]="active().key === def.key ? 'bg-brand-500/12 text-brand-600 dark:bg-brand-400/20 dark:text-brand-300' : 'text-ink-muted hover:bg-brand-100/50 hover:text-ink dark:text-cream-bezel2 dark:hover:bg-white/5 dark:hover:text-cream'"
+          (click)="selectCatalog(def)"
+        >
+          <lucide-icon [img]="def.icon" [size]="17" class="shrink-0" />
+          <span class="whitespace-nowrap lg:whitespace-normal">{{ def.label }}</span>
+        </button>
+      }
+    </nav>
+
+    <!-- Contenu du catalogue -->
+    <div class="min-w-0 flex-1">
+      <div class="glass-card flex flex-wrap items-center gap-3 p-3">
+        <div class="relative min-w-52 flex-1">
+          <lucide-icon [img]="SearchIcon" [size]="15" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60" />
+          <input type="search" [value]="search()" (input)="search.set($any($event.target).value)" [placeholder]="'Rechercher dans ' + active().label.toLowerCase() + '…'" class="input-glass !py-2.5 pl-10" [attr.aria-label]="'Rechercher dans ' + active().label" />
+        </div>
+        @if (canEdit()) {
+          <button type="button" class="btn-brand !py-2.5" (click)="newItem()">
+            <lucide-icon [img]="PlusIcon" [size]="16" /> Ajouter un(e) {{ active().singular }}
+          </button>
+        }
+      </div>
+
+      @if (listQuery.isPending()) {
+        <div class="mt-4 flex flex-col gap-2">@for (i of [1,2,3,4,5]; track i) { <div class="skeleton h-14"></div> }</div>
+      } @else if (listQuery.isError()) {
+        <div class="glass-card mt-4 px-6 py-12 text-center text-sm text-ink-muted dark:text-cream-bezel2">Impossible de charger ce catalogue.</div>
+      } @else {
+        <div class="glass-card mt-4 overflow-hidden">
+          @if (items().length === 0) {
+            <p class="px-6 py-12 text-center text-sm text-ink-muted dark:text-cream-bezel2">Aucun élément.</p>
+          } @else {
+            <ul>
+              @for (item of items(); track item.id) {
+                <li class="flex items-center gap-3 border-b border-ink/4 px-4 py-2.5 transition-colors last:border-0 hover:bg-brand-100/40 dark:border-white/5 dark:hover:bg-white/5" [class.opacity-50]="!item.is_active">
+                  <span class="w-8 text-center font-mono text-xs text-ink-faint dark:text-cream-bezel2/60">{{ item.sort_order }}</span>
+                  @if (item.emoji) { <span class="text-lg">{{ item.emoji }}</span> }
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-semibold text-ink dark:text-cream">{{ item.label }}</span>
+                    <span class="block truncate font-mono text-xs text-ink-faint dark:text-cream-bezel2/60">
+                      {{ item.key }}@if (item.category) { · {{ item.category }} }@if (item.country_key) { · {{ item.country_key }} }@if (item.subtitle) { · {{ item.subtitle }} }
+                    </span>
+                  </span>
+                  <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold" [class]="item.is_active ? 'bg-success/12 text-success' : 'bg-ink-faint/15 text-ink-faint dark:bg-white/10 dark:text-cream-bezel2/70'">
+                    {{ item.is_active ? 'Actif' : 'Inactif' }}
+                  </span>
+                  @if (canEdit()) {
+                    <div class="flex shrink-0 items-center gap-1">
+                      <button type="button" class="btn-icon !size-8" (click)="toggleActive(item)" [disabled]="busy()" [attr.aria-label]="item.is_active ? 'Désactiver' : 'Activer'">
+                        <lucide-icon [img]="CheckIcon" [size]="15" />
+                      </button>
+                      <button type="button" class="btn-icon !size-8" (click)="editItem(item)" aria-label="Modifier">
+                        <lucide-icon [img]="EditIcon" [size]="15" />
+                      </button>
+                      <button type="button" class="btn-icon !size-8 !text-danger" (click)="deleteTarget.set(item)" [disabled]="busy()" aria-label="Supprimer">
+                        <lucide-icon [img]="DeleteIcon" [size]="15" />
+                      </button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+        <p class="mt-2 px-1 text-xs text-ink-faint dark:text-cream-bezel2/60">{{ items().length }} élément(s)</p>
+      }
+    </div>
+  </div>
+</section>
+
+<!-- Dialogue édition -->
+@if (editTarget(); as item) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="editTarget.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-md p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-ink dark:text-cream">
+        {{ editing() ? 'Modifier' : 'Ajouter' }} — {{ active().singular }}
+      </h2>
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Clé
+          <input type="text" [value]="item.key || ''" (input)="patch({ key: $any($event.target).value })" [disabled]="editing()" class="input-glass mt-1 !py-2.5 disabled:opacity-60" placeholder="cle_unique" />
+        </label>
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Ordre
+          <input type="number" [value]="item.sort_order ?? 0" (input)="patch({ sort_order: +$any($event.target).value })" class="input-glass mt-1 !py-2.5" />
+        </label>
+        <label class="col-span-2 text-xs font-bold text-ink-soft dark:text-cream-bezel2">Libellé
+          <input type="text" [value]="item.label || ''" (input)="patch({ label: $any($event.target).value })" class="input-glass mt-1 !py-2.5" placeholder="Affiché dans l'app" />
+        </label>
+        @for (field of active().extraFields; track field.name) {
+          <label class="col-span-2 text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+            {{ field.label }}@if (field.optional) { <span class="font-normal text-ink-faint">(optionnel)</span> }
+            <input [type]="field.type === 'number' ? 'number' : 'text'" [value]="$any(item)[field.name] ?? ''" (input)="patchField(field.name, $any($event.target).value)" class="input-glass mt-1 !py-2.5" />
+          </label>
+        }
+        <label class="col-span-2 flex items-center gap-2 text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+          <input type="checkbox" [checked]="item.is_active ?? true" (change)="patch({ is_active: $any($event.target).checked })" class="size-4 accent-brand-500" />
+          Actif (visible dans l'application)
+        </label>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="editTarget.set(null)">Annuler</button>
+        <button type="button" class="btn-brand !py-2.5" (click)="save()" [disabled]="busy()">
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Dialogue suppression -->
+@if (deleteTarget(); as item) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="deleteTarget.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-sm p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-danger">Supprimer « {{ item.label }} » ?</h2>
+      <p class="mt-2 text-sm text-ink-muted dark:text-cream-bezel2">
+        Les profils qui référencent cet élément ne seront pas supprimés, mais la valeur ne sera plus proposée.
+      </p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="deleteTarget.set(null)">Annuler</button>
+        <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-danger px-5 py-2.5 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60" (click)="confirmDelete()" [disabled]="busy()">
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+}

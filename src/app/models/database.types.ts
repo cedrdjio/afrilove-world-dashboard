@@ -944,6 +944,16 @@ export type Database = {
         Returns: Json
       }
       admin_verify_email: { Args: { p_user_id: string }; Returns: undefined }
+      admin_audience_count: { Args: { p_audience: Json }; Returns: number }
+      admin_cancel_broadcast: { Args: { p_id: string }; Returns: undefined }
+      admin_catalog_delete: { Args: { p_catalog: string; p_id: string }; Returns: undefined }
+      admin_catalog_list: { Args: { p_catalog: string }; Returns: Json }
+      admin_catalog_upsert: { Args: { p_catalog: string; p_row: Json }; Returns: undefined }
+      admin_notification_history: { Args: { p_limit?: number }; Returns: Json }
+      admin_send_notification: {
+        Args: { p_audience?: Json; p_body: string; p_scheduled_for?: string; p_title: string }
+        Returns: Json
+      }
       admin_cancel_subscription: {
         Args: { p_refund?: boolean; p_subscription_id: string }
         Returns: undefined

@@ -41,7 +41,7 @@ export const NAV_SECTIONS: NavSection[] = [
         minRole: 'moderator',
         badge: (stats) => stats.reports_pending,
       },
-      { label: 'Contenu', path: '/content', icon: Layers, minRole: 'admin', sprint: 'A6' },
+      { label: 'Contenu', path: '/content', icon: Layers, minRole: 'admin' },
     ],
   },
   {
@@ -58,7 +58,6 @@ export const NAV_SECTIONS: NavSection[] = [
         path: '/notifications',
         icon: BellRing,
         minRole: 'admin',
-        sprint: 'A7',
       },
       {
         label: 'Rôles & accès',

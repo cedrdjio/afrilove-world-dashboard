@@ -1,0 +1,165 @@
+<section class="mx-auto flex max-w-7xl flex-col gap-4 animate-fade-up">
+  <header>
+    <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">Notifications</h1>
+    <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">
+      Diffusez une notification push à un segment de membres, tout de suite ou en différé
+    </p>
+  </header>
+
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-5">
+    <!-- Compositeur -->
+    <div class="lg:col-span-3">
+      <form class="glass-card flex flex-col gap-4 p-5" (submit)="$event.preventDefault(); submit()">
+        <div>
+          <label class="mb-1.5 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">Titre</label>
+          <input type="text" [value]="title()" (input)="title.set($any($event.target).value)" maxlength="80" placeholder="Ex. : Nouvelle fonctionnalité 🎉" class="input-glass !py-2.5" />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">Message</label>
+          <textarea [value]="body()" (input)="body.set($any($event.target).value)" rows="3" maxlength="240" placeholder="Le corps de la notification…" class="input-glass"></textarea>
+          <p class="mt-1 text-right text-[11px] text-ink-faint dark:text-cream-bezel2/60">{{ body().length }}/240</p>
+        </div>
+
+        <!-- Ciblage -->
+        <div>
+          <label class="mb-1.5 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">Audience</label>
+          <div class="flex flex-wrap gap-2">
+            @for (opt of [['all','Tous'],['country','Par pays'],['gender','Par genre'],['premium','Premium'],['age','Par âge']]; track opt[0]) {
+              <button type="button" class="rounded-xl px-3.5 py-2 text-xs font-bold transition-all" [class]="audienceType() === opt[0] ? 'bg-brand-500 text-white shadow-md dark:bg-brand-400' : 'glass text-ink-muted hover:text-ink dark:text-cream-bezel2 dark:hover:text-cream'" (click)="audienceType.set($any(opt[0]))">
+                {{ opt[1] }}
+              </button>
+            }
+          </div>
+
+          <!-- Options selon le type -->
+          <div class="mt-3">
+            @switch (audienceType()) {
+              @case ('country') {
+                <select [value]="country()" (change)="country.set($any($event.target).value)" class="input-glass !py-2.5" aria-label="Pays cible">
+                  <option value="">— Choisir un pays —</option>
+                  @for (c of countries(); track c.id) {
+                    <option [value]="c.label">{{ c.emoji }} {{ c.label }}</option>
+                  }
+                </select>
+              }
+              @case ('gender') {
+                <div class="flex gap-2">
+                  <button type="button" class="flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all" [class]="gender() === 'femme' ? 'bg-brand-500/12 text-brand-600 dark:bg-brand-400/20 dark:text-brand-300' : 'glass text-ink-muted'" (click)="gender.set('femme')">Femmes</button>
+                  <button type="button" class="flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all" [class]="gender() === 'homme' ? 'bg-brand-500/12 text-brand-600 dark:bg-brand-400/20 dark:text-brand-300' : 'glass text-ink-muted'" (click)="gender.set('homme')">Hommes</button>
+                </div>
+              }
+              @case ('premium') {
+                <div class="flex gap-2">
+                  <button type="button" class="flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all" [class]="premium() ? 'bg-brand-500/12 text-brand-600 dark:bg-brand-400/20 dark:text-brand-300' : 'glass text-ink-muted'" (click)="premium.set(true)">Membres premium</button>
+                  <button type="button" class="flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition-all" [class]="!premium() ? 'bg-brand-500/12 text-brand-600 dark:bg-brand-400/20 dark:text-brand-300' : 'glass text-ink-muted'" (click)="premium.set(false)">Non premium</button>
+                </div>
+              }
+              @case ('age') {
+                <div class="flex items-center gap-3">
+                  <label class="flex-1 text-xs font-bold text-ink-soft dark:text-cream-bezel2">Âge min
+                    <input type="number" min="18" max="99" [value]="ageMin()" (input)="ageMin.set(+$any($event.target).value)" class="input-glass mt-1 !py-2.5" />
+                  </label>
+                  <label class="flex-1 text-xs font-bold text-ink-soft dark:text-cream-bezel2">Âge max
+                    <input type="number" min="18" max="99" [value]="ageMax()" (input)="ageMax.set(+$any($event.target).value)" class="input-glass mt-1 !py-2.5" />
+                  </label>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <!-- Programmation -->
+        <div>
+          <label class="flex items-center gap-2 text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+            <input type="checkbox" [checked]="scheduleEnabled()" (change)="scheduleEnabled.set($any($event.target).checked)" class="size-4 accent-brand-500" />
+            Programmer l'envoi
+          </label>
+          @if (scheduleEnabled()) {
+            <input type="datetime-local" [value]="scheduledFor()" (input)="scheduledFor.set($any($event.target).value)" class="input-glass mt-2 !py-2.5" aria-label="Date d'envoi" />
+          }
+        </div>
+
+        <!-- Aperçu destinataires + envoi -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-ink/6 pt-4 dark:border-white/8">
+          <span class="inline-flex items-center gap-2 text-sm text-ink-muted dark:text-cream-bezel2">
+            <lucide-icon [img]="UsersIcon" [size]="16" />
+            @if (counting()) {
+              <span class="skeleton inline-block h-4 w-10 align-middle"></span> destinataires
+            } @else {
+              <strong class="font-display text-ink dark:text-cream">{{ recipientCount() ?? 0 }}</strong> destinataire(s)
+            }
+          </span>
+          <button type="submit" class="btn-brand !py-2.5" [disabled]="!canSend() || sending()">
+            @if (sending()) { <lucide-icon [img]="LoaderIcon" [size]="16" class="animate-spin" /> }
+            @else { <lucide-icon [img]="scheduleEnabled() ? ScheduleIcon : SendIcon" [size]="16" /> }
+            {{ scheduleEnabled() ? 'Programmer' : 'Envoyer maintenant' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Aperçu de la notification -->
+    <div class="lg:col-span-2">
+      <div class="glass-card p-5">
+        <p class="mb-3 text-[11px] font-bold tracking-wide text-ink-faint uppercase dark:text-cream-bezel2/60">Aperçu</p>
+        <div class="rounded-2xl border border-ink/8 bg-white/60 p-3 dark:border-white/10 dark:bg-white/5">
+          <div class="flex items-start gap-3">
+            <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-linear-135 from-brand-400 to-brand-600 text-white">
+              <lucide-icon [img]="BellIcon" [size]="17" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold text-ink dark:text-cream">{{ title() || 'Titre de la notification' }}</p>
+              <p class="mt-0.5 text-xs leading-relaxed text-ink-muted dark:text-cream-bezel2">{{ body() || 'Le message apparaîtra ici, tel que les membres le verront.' }}</p>
+              <p class="mt-1.5 text-[10px] font-semibold text-brand-500 dark:text-brand-300">AfriLove World · maintenant</p>
+            </div>
+          </div>
+        </div>
+        <p class="mt-3 text-xs text-ink-muted dark:text-cream-bezel2">
+          Cible : <strong class="text-ink dark:text-cream">{{ audienceLabel(audience()) }}</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historique -->
+  <div>
+    <h2 class="mb-2 mt-2 font-display text-lg font-extrabold text-ink dark:text-cream">Historique</h2>
+    @if (historyQuery.isPending()) {
+      <div class="flex flex-col gap-2">@for (i of [1,2,3]; track i) { <div class="skeleton h-16"></div> }</div>
+    } @else if (historyQuery.data(); as history) {
+      @if (history.length === 0) {
+        <div class="glass-card px-6 py-12 text-center text-sm text-ink-muted dark:text-cream-bezel2">Aucune notification envoyée pour le moment.</div>
+      } @else {
+        <ul class="flex flex-col gap-2">
+          @for (item of history; track item.id) {
+            <li class="glass-card flex flex-wrap items-center gap-3 p-4">
+              <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-500/12 text-brand-600 dark:bg-brand-400/20 dark:text-brand-300">
+                <lucide-icon [img]="BellIcon" [size]="16" />
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold text-ink dark:text-cream">{{ item.title }}</p>
+                <p class="truncate text-xs text-ink-muted dark:text-cream-bezel2">{{ item.body }}</p>
+                <p class="mt-0.5 text-[11px] text-ink-faint dark:text-cream-bezel2/60">
+                  {{ audienceLabel(item.audience) }} · {{ item.recipients_count }} destinataire(s)
+                  @if (item.author) { · par {{ item.author }} }
+                </p>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
+                <span class="rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="statusClasses(item.status)">{{ statusLabel(item.status) }}</span>
+                <span class="text-xs text-ink-faint dark:text-cream-bezel2/60">
+                  @if (item.status === 'scheduled' && item.scheduled_for) { {{ item.scheduled_for | relativeTime }} }
+                  @else { {{ (item.sent_at || item.created_at) | relativeTime }} }
+                </span>
+                @if (item.status === 'scheduled') {
+                  <button type="button" class="btn-icon !size-8 !text-danger" (click)="cancel(item)" aria-label="Annuler l'envoi programmé">
+                    <lucide-icon [img]="CancelIcon" [size]="15" />
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</section>

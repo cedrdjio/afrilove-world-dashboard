@@ -74,15 +74,16 @@ export const routes: Routes = [
         path: 'content',
         title: 'Contenu',
         canActivate: [roleGuard('admin')],
-        data: { breadcrumb: 'Contenu', sprint: 'A6' },
-        loadComponent: comingSoon,
+        data: { breadcrumb: 'Contenu' },
+        loadComponent: () => import('./features/content/content-page').then((m) => m.ContentPage),
       },
       {
         path: 'notifications',
         title: 'Notifications',
         canActivate: [roleGuard('admin')],
-        data: { breadcrumb: 'Notifications', sprint: 'A7' },
-        loadComponent: comingSoon,
+        data: { breadcrumb: 'Notifications' },
+        loadComponent: () =>
+          import('./features/notifications/notifications-page').then((m) => m.NotificationsPage),
       },
       {
         path: 'settings',
