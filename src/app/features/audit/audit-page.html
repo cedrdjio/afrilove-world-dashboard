@@ -1,0 +1,94 @@
+<section class="mx-auto flex max-w-6xl flex-col gap-4 animate-fade-up">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">Audit</h1>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">Traçabilité des actions back-office et connexions</p>
+    </div>
+    <button type="button" class="btn-icon glass rounded-xl" (click)="auditQuery.refetch(); loginQuery.refetch()" aria-label="Actualiser">
+      <lucide-icon [img]="RefreshIcon" [size]="17" />
+    </button>
+  </header>
+
+  <div class="glass inline-flex w-fit rounded-xl p-1" role="tablist">
+    <button type="button" role="tab" class="inline-flex items-center gap-2 rounded-lg px-4 py-2 font-display text-sm font-bold transition-all" [class]="tab() === 'actions' ? 'bg-brand-500 text-white shadow-md dark:bg-brand-400' : 'text-ink-muted hover:text-ink dark:text-cream-bezel2 dark:hover:text-cream'" [attr.aria-selected]="tab() === 'actions'" (click)="tab.set('actions')">
+      <lucide-icon [img]="LogIcon" [size]="15" /> Actions
+    </button>
+    <button type="button" role="tab" class="inline-flex items-center gap-2 rounded-lg px-4 py-2 font-display text-sm font-bold transition-all" [class]="tab() === 'logins' ? 'bg-brand-500 text-white shadow-md dark:bg-brand-400' : 'text-ink-muted hover:text-ink dark:text-cream-bezel2 dark:hover:text-cream'" [attr.aria-selected]="tab() === 'logins'" (click)="tab.set('logins')">
+      <lucide-icon [img]="LoginIcon" [size]="15" /> Connexions
+    </button>
+  </div>
+
+  @if (tab() === 'actions') {
+    <div class="glass-card flex flex-wrap items-center gap-3 p-3">
+      <div class="relative min-w-52 flex-1">
+        <lucide-icon [img]="SearchIcon" [size]="15" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60" />
+        <input type="search" [value]="audit.query()" (input)="onSearch($any($event.target).value)" placeholder="Action, administrateur…" class="input-glass !py-2.5 pl-10" aria-label="Rechercher" />
+      </div>
+      <select [value]="audit.targetType()" (change)="onType($any($event.target).value)" class="input-glass w-auto !py-2.5" aria-label="Type de cible">
+        @for (t of targetTypes; track t) { <option [value]="t">{{ typeLabel(t) }}</option> }
+      </select>
+      <button type="button" class="btn-icon glass w-auto gap-2 rounded-xl px-3 text-xs font-bold" (click)="exportAudit()"><lucide-icon [img]="ExportIcon" [size]="13" /> Export CSV</button>
+    </div>
+
+    @if (auditQuery.isPending()) {
+      <div class="flex flex-col gap-2">@for (i of [1,2,3,4,5]; track i) { <div class="skeleton h-16"></div> }</div>
+    } @else if (result(); as r) {
+      @if (r.items.length === 0) {
+        <div class="glass-card px-6 py-12 text-center text-sm text-ink-muted dark:text-cream-bezel2">Aucune action enregistrée.</div>
+      } @else {
+        <!-- Timeline -->
+        <ol class="glass-card flex flex-col p-5">
+          @for (entry of r.items; track entry.id; let last = $last) {
+            <li class="relative flex gap-4 pb-5" [class.pb-0]="last">
+              @if (!last) { <span class="absolute top-7 left-[13px] h-[calc(100%-1.75rem)] w-px bg-ink/8 dark:bg-white/8"></span> }
+              <span class="z-10 mt-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full" [class]="actionColor(entry.action)">
+                <span class="size-2 rounded-full bg-current"></span>
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-baseline gap-x-2">
+                  <span class="rounded-md px-1.5 py-0.5 font-mono text-[11px] font-bold" [class]="actionColor(entry.action)">{{ entry.action }}</span>
+                  <span class="text-sm font-semibold text-ink dark:text-cream">{{ entry.admin_name || entry.admin_email || 'système' }}</span>
+                  <span class="text-xs text-ink-faint dark:text-cream-bezel2/60">{{ entry.created_at | relativeTime }}</span>
+                </div>
+                <p class="mt-0.5 text-xs text-ink-muted dark:text-cream-bezel2">
+                  {{ entry.target_type }}@if (entry.target_id) { <span class="font-mono">#{{ entry.target_id.slice(0, 8) }}</span> }
+                  @if (metaSummary(entry)) { · {{ metaSummary(entry) }} }
+                </p>
+              </div>
+            </li>
+          }
+        </ol>
+
+        @if (totalPages() > 1) {
+          <footer class="flex items-center justify-end gap-2">
+            <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="audit.page() === 0" (click)="audit.page.set(audit.page() - 1)" aria-label="Précédent"><lucide-icon [img]="PrevIcon" [size]="17" /></button>
+            <span class="font-display text-xs font-bold text-ink dark:text-cream">{{ audit.page() + 1 }} / {{ totalPages() }}</span>
+            <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="audit.page() + 1 >= totalPages()" (click)="audit.page.set(audit.page() + 1)" aria-label="Suivant"><lucide-icon [img]="NextIcon" [size]="17" /></button>
+          </footer>
+        }
+      }
+    }
+  } @else {
+    @if (loginQuery.isPending()) {
+      <div class="flex flex-col gap-2">@for (i of [1,2,3,4]; track i) { <div class="skeleton h-12"></div> }</div>
+    } @else if (loginQuery.data(); as logs) {
+      @if (logs.length === 0) {
+        <div class="glass-card px-6 py-12 text-center text-sm text-ink-muted dark:text-cream-bezel2">Aucun événement de connexion récent.</div>
+      } @else {
+        <div class="glass-card overflow-hidden">
+          <ul>
+            @for (log of logs; track $index) {
+              <li class="flex items-center gap-3 border-b border-ink/4 px-5 py-3 last:border-0 dark:border-white/5">
+                <lucide-icon [img]="LoginIcon" [size]="15" class="shrink-0 text-ink-faint dark:text-cream-bezel2/60" />
+                <span class="w-40 shrink-0 font-mono text-xs font-bold text-brand-600 dark:text-brand-300">{{ log.action }}</span>
+                <span class="min-w-0 flex-1 truncate text-sm text-ink-soft dark:text-cream-bezel2">{{ log.actor || '—' }}</span>
+                @if (log.ip) { <span class="shrink-0 font-mono text-xs text-ink-faint dark:text-cream-bezel2/60">{{ log.ip }}</span> }
+                <span class="shrink-0 text-xs text-ink-faint dark:text-cream-bezel2/60">{{ log.created_at | relativeTime }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
+  }
+</section>

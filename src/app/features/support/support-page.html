@@ -1,0 +1,135 @@
+<section class="mx-auto flex max-w-6xl flex-col gap-4 animate-fade-up">
+  <header>
+    <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">Support</h1>
+    <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">Tickets des membres — réponses, notes internes et suivi</p>
+  </header>
+
+  <div class="glass-card flex flex-wrap items-center gap-3 p-3">
+    <div class="glass inline-flex rounded-xl p-1" role="tablist">
+      @for (tab of tabs; track tab) {
+        <button type="button" role="tab" class="rounded-lg px-3.5 py-1.5 font-display text-xs font-bold transition-all" [class]="support.status() === tab ? 'bg-brand-500 text-white shadow-md dark:bg-brand-400' : 'text-ink-muted hover:text-ink dark:text-cream-bezel2 dark:hover:text-cream'" [attr.aria-selected]="support.status() === tab" (click)="support.setStatus(tab)">
+          {{ statusLabel[tab] }} <span class="ml-1 opacity-70">{{ countOf(tab) }}</span>
+        </button>
+      }
+    </div>
+    <div class="relative min-w-52 flex-1">
+      <lucide-icon [img]="SearchIcon" [size]="15" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-ink-faint dark:text-cream-bezel2/60" />
+      <input type="search" [value]="support.query()" (input)="onSearch($any($event.target).value)" placeholder="Sujet, membre…" class="input-glass !py-2.5 pl-10" aria-label="Rechercher un ticket" />
+    </div>
+  </div>
+
+  @if (listQuery.isPending()) {
+    <div class="flex flex-col gap-2">@for (i of [1,2,3,4]; track i) { <div class="skeleton h-20"></div> }</div>
+  } @else if (result(); as r) {
+    @if (r.items.length === 0) {
+      <div class="glass-card flex flex-col items-center gap-3 px-6 py-14 text-center">
+        <lucide-icon [img]="SupportIcon" [size]="28" class="text-ink-faint dark:text-cream-bezel2/50" />
+        <p class="text-sm text-ink-muted dark:text-cream-bezel2">Aucun ticket {{ statusLabel[support.status()].toLowerCase() }}.</p>
+      </div>
+    } @else {
+      <ul class="flex flex-col gap-2">
+        @for (ticket of r.items; track ticket.id) {
+          <li>
+            <button type="button" class="glass-card glass-card-hover flex w-full items-center gap-3 p-4 text-left" (click)="open(ticket)">
+              <app-avatar [src]="ticket.member.avatar" [name]="ticket.member.name" [size]="40" />
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="truncate font-display text-sm font-bold text-ink dark:text-cream">{{ ticket.subject }}</span>
+                  <span class="rounded-full px-2 py-0.5 text-[10px] font-bold" [class]="priorityClasses(ticket.priority)">{{ priorityLabel[ticket.priority] }}</span>
+                </div>
+                <p class="truncate text-xs text-ink-muted dark:text-cream-bezel2">
+                  {{ ticket.member.name || ticket.member.email || 'Membre' }} · {{ ticket.category }} · {{ ticket.message_count }} message(s)
+                  @if (ticket.assignee_name) { · assigné à {{ ticket.assignee_name }} }
+                </p>
+              </div>
+              <div class="flex shrink-0 flex-col items-end gap-1">
+                <span class="rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="statusClasses(ticket.status)">{{ statusLabel[ticket.status] }}</span>
+                <span class="text-[11px] text-ink-faint dark:text-cream-bezel2/60">{{ ticket.updated_at | relativeTime }}</span>
+              </div>
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (totalPages() > 1) {
+        <footer class="flex items-center justify-end gap-2">
+          <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="support.page() === 0" (click)="support.page.set(support.page() - 1)" aria-label="Précédent">‹</button>
+          <span class="font-display text-xs font-bold text-ink dark:text-cream">{{ support.page() + 1 }} / {{ totalPages() }}</span>
+          <button type="button" class="btn-icon glass rounded-xl disabled:opacity-40" [disabled]="support.page() + 1 >= totalPages()" (click)="support.page.set(support.page() + 1)" aria-label="Suivant">›</button>
+        </footer>
+      }
+    }
+  }
+</section>
+
+<!-- Panneau détail -->
+@if (detailLoading() || detail()) {
+  <div class="fixed inset-0 z-[80] flex justify-end bg-deep-black/45 backdrop-blur-sm" (click)="detail.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card flex h-full w-full max-w-xl flex-col !rounded-none p-0 animate-scale-in sm:m-3 sm:h-[calc(100%-1.5rem)] sm:!rounded-3xl" (click)="$event.stopPropagation()">
+      @if (detailLoading()) {
+        <div class="flex flex-1 items-center justify-center"><lucide-icon [img]="LoaderIcon" [size]="24" class="animate-spin text-brand-500" /></div>
+      } @else if (detail(); as d) {
+        <header class="border-b border-ink/6 px-5 py-4 dark:border-white/8">
+          <div class="flex items-start gap-3">
+            <app-avatar [src]="d.ticket.member.avatar" [name]="d.ticket.member.name" [size]="40" />
+            <div class="min-w-0 flex-1">
+              <p class="font-display text-sm font-bold text-ink dark:text-cream">{{ d.ticket.subject }}</p>
+              <p class="truncate text-xs text-ink-muted dark:text-cream-bezel2">{{ d.ticket.member.name || d.ticket.member.email }} · {{ d.ticket.category }}</p>
+            </div>
+            <button type="button" class="btn-icon" (click)="detail.set(null)" aria-label="Fermer"><lucide-icon [img]="CloseIcon" [size]="17" /></button>
+          </div>
+          <!-- Contrôles statut / priorité -->
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <div class="glass inline-flex rounded-lg p-0.5">
+              @for (st of tabs; track st) {
+                <button type="button" class="rounded-md px-2.5 py-1 text-[11px] font-bold transition-all" [class]="d.ticket.status === st ? 'bg-brand-500 text-white dark:bg-brand-400' : 'text-ink-muted dark:text-cream-bezel2'" (click)="setStatus(st)" [disabled]="busy()">{{ statusLabel[st] }}</button>
+              }
+            </div>
+            <div class="glass inline-flex rounded-lg p-0.5">
+              @for (pr of ['low','normal','high']; track pr) {
+                <button type="button" class="rounded-md px-2.5 py-1 text-[11px] font-bold transition-all" [class]="d.ticket.priority === pr ? 'bg-brand-500 text-white dark:bg-brand-400' : 'text-ink-muted dark:text-cream-bezel2'" (click)="setPriority(pr)" [disabled]="busy()">{{ priorityLabel[pr] }}</button>
+              }
+            </div>
+          </div>
+        </header>
+
+        <!-- Fil de messages -->
+        <div class="flex-1 overflow-y-auto p-4">
+          <ul class="flex flex-col gap-3">
+            @for (msg of d.messages; track msg.id) {
+              <li class="flex flex-col" [class.items-end]="!msg.is_from_member && !msg.is_internal">
+                @if (msg.is_internal) {
+                  <div class="w-full rounded-xl border border-warning/30 bg-warning/8 px-3.5 py-2">
+                    <p class="mb-0.5 flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-warning uppercase"><lucide-icon [img]="NoteIcon" [size]="11" /> Note interne · {{ msg.author_name }}</p>
+                    <p class="text-sm text-ink-soft dark:text-cream-bezel2">{{ msg.body }}</p>
+                  </div>
+                } @else {
+                  <div class="max-w-[85%] rounded-2xl px-3.5 py-2" [class]="msg.is_from_member ? 'bg-white/70 text-ink dark:bg-white/10 dark:text-cream' : 'bg-brand-500 text-white'">
+                    <p class="mb-0.5 text-[10px] font-bold opacity-70">{{ msg.author_name }}</p>
+                    <p class="text-sm leading-relaxed">{{ msg.body }}</p>
+                  </div>
+                }
+                <span class="mt-0.5 px-1 text-[10px] text-ink-faint dark:text-cream-bezel2/60">{{ msg.created_at | relativeTime }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Zone de réponse -->
+        <footer class="border-t border-ink/6 p-4 dark:border-white/8">
+          <textarea [value]="replyText()" (input)="replyText.set($any($event.target).value)" rows="2" [placeholder]="replyInternal() ? 'Note interne (invisible du membre)…' : 'Votre réponse au membre…'" class="input-glass"></textarea>
+          <div class="mt-2 flex items-center justify-between gap-2">
+            <label class="flex cursor-pointer items-center gap-2 text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+              <input type="checkbox" [checked]="replyInternal()" (change)="replyInternal.set($any($event.target).checked)" class="size-4 accent-warning" />
+              Note interne
+            </label>
+            <button type="button" class="btn-brand !py-2.5" (click)="send()" [disabled]="busy() || replyText().trim() === ''">
+              @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } @else { <lucide-icon [img]="replyInternal() ? NoteIcon : SendIcon" [size]="15" /> }
+              {{ replyInternal() ? 'Ajouter la note' : 'Envoyer' }}
+            </button>
+          </div>
+        </footer>
+      }
+    </div>
+  </div>
+}

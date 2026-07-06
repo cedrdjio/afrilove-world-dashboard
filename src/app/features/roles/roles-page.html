@@ -1,0 +1,135 @@
+<section class="mx-auto flex max-w-5xl flex-col gap-4 animate-fade-up">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">Rôles & accès</h1>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">Membres du back-office et permissions par rôle</p>
+    </div>
+    <button type="button" class="btn-brand !py-2.5" (click)="addOpen.set(true)"><lucide-icon [img]="AddIcon" [size]="16" /> Ajouter un membre</button>
+  </header>
+
+  <!-- Membres -->
+  @if (adminsQuery.isPending()) {
+    <div class="flex flex-col gap-2">@for (i of [1,2,3]; track i) { <div class="skeleton h-16"></div> }</div>
+  } @else if (adminsQuery.data(); as admins) {
+    <div class="glass-card overflow-x-auto">
+      <table class="w-full min-w-2xl text-left text-sm">
+        <thead>
+          <tr class="border-b border-ink/6 text-[11px] tracking-wide text-ink-faint uppercase dark:border-white/8 dark:text-cream-bezel2/60">
+            <th class="px-5 py-3.5 font-bold">Membre</th>
+            <th class="px-3 py-3.5 font-bold">Rôle</th>
+            <th class="px-3 py-3.5 font-bold">Accès</th>
+            <th class="px-3 py-3.5 font-bold">Dernière connexion</th>
+            <th class="px-5 py-3.5 text-right font-bold">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of admins; track member.user_id) {
+            <tr class="border-b border-ink/4 last:border-0 dark:border-white/5">
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <app-avatar [name]="member.display_name || member.email" [size]="36" />
+                  <div class="min-w-0">
+                    <p class="truncate font-semibold text-ink dark:text-cream">
+                      {{ member.display_name || '—' }}
+                      @if (member.user_id === myId()) { <span class="ml-1 text-xs font-normal text-ink-faint">(vous)</span> }
+                    </p>
+                    <p class="truncate text-xs text-ink-muted dark:text-cream-bezel2">{{ member.email }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-3 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="roleBadge(member.role)">{{ roleLabel[member.role] }}</span></td>
+              <td class="px-3 py-3">
+                <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="member.is_active ? 'bg-success/12 text-success' : 'bg-ink-faint/15 text-ink-faint dark:bg-white/10 dark:text-cream-bezel2/70'">
+                  {{ member.is_active ? 'Actif' : 'Suspendu' }}
+                </span>
+              </td>
+              <td class="px-3 py-3 text-ink-muted dark:text-cream-bezel2">{{ (member.last_sign_in_at | relativeTime) || '—' }}</td>
+              <td class="px-5 py-3 text-right">
+                @if (member.user_id !== myId()) {
+                  <div class="flex justify-end gap-1.5">
+                    <button type="button" class="btn-icon glass w-auto rounded-xl px-3 text-xs font-bold" (click)="toggleActive(member)" [disabled]="busy()">
+                      {{ member.is_active ? 'Suspendre' : 'Réactiver' }}
+                    </button>
+                    <button type="button" class="btn-icon !size-9 !text-danger" (click)="revokeTarget.set(member)" [disabled]="busy()" aria-label="Révoquer"><lucide-icon [img]="RevokeIcon" [size]="15" /></button>
+                  </div>
+                } @else {
+                  <span class="text-xs text-ink-faint dark:text-cream-bezel2/50">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- Matrice de permissions -->
+  <article class="glass-card overflow-x-auto p-5">
+    <div class="mb-3 flex items-center gap-2"><lucide-icon [img]="AdminIcon" [size]="18" class="text-brand-500 dark:text-brand-300" /><h2 class="font-display text-base font-bold text-ink dark:text-cream">Permissions par rôle</h2></div>
+    <table class="w-full min-w-3xl text-left text-sm">
+      <thead>
+        <tr class="border-b border-ink/6 dark:border-white/8">
+          <th class="py-2.5 pr-3 text-[11px] font-bold tracking-wide text-ink-faint uppercase dark:text-cream-bezel2/60">Domaine</th>
+          @for (r of allRoles; track r) { <th class="px-2 py-2.5 text-center text-[11px] font-bold text-ink-faint dark:text-cream-bezel2/60">{{ roleLabel[r] }}</th> }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of matrix; track row.area) {
+          <tr class="border-b border-ink/4 last:border-0 dark:border-white/5">
+            <td class="py-2.5 pr-3 text-ink-soft dark:text-cream-bezel2">{{ row.area }}</td>
+            @for (r of allRoles; track r) {
+              <td class="px-2 py-2.5 text-center">
+                @if (row.roles[r]) { <span class="text-success">✓</span> } @else { <span class="text-ink-faint/40 dark:text-cream-bezel2/30">—</span> }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </article>
+</section>
+
+<!-- Dialogue ajout -->
+@if (addOpen()) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="addOpen.set(false)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-md p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-ink dark:text-cream">Ajouter un membre back-office</h2>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">La personne doit déjà avoir un compte AfriLove (app ou dashboard).</p>
+      <div class="mt-4 flex flex-col gap-3">
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">E-mail du compte
+          <input type="email" [value]="newEmail()" (input)="newEmail.set($any($event.target).value)" class="input-glass mt-1 !py-2.5" placeholder="personne@exemple.com" />
+        </label>
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Nom affiché (optionnel)
+          <input type="text" [value]="newName()" (input)="newName.set($any($event.target).value)" class="input-glass mt-1 !py-2.5" />
+        </label>
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Rôle
+          <select [value]="newRole()" (change)="newRole.set($any($event.target).value)" class="input-glass mt-1 !py-2.5">
+            @for (r of allRoles; track r) { <option [value]="r">{{ roleLabel[r] }}</option> }
+          </select>
+        </label>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="addOpen.set(false)">Annuler</button>
+        <button type="button" class="btn-brand !py-2.5" (click)="grant()" [disabled]="busy()">
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } Accorder l'accès
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Dialogue révocation -->
+@if (revokeTarget(); as member) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="revokeTarget.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-sm p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-danger">Révoquer l'accès ?</h2>
+      <p class="mt-2 text-sm text-ink-muted dark:text-cream-bezel2"><strong class="text-ink dark:text-cream">{{ member.display_name || member.email }}</strong> perdra tout accès au back-office. Son compte membre n'est pas affecté.</p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="revokeTarget.set(null)">Annuler</button>
+        <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-danger px-5 py-2.5 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60" (click)="confirmRevoke()" [disabled]="busy()">
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } Révoquer
+        </button>
+      </div>
+    </div>
+  </div>
+}

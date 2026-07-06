@@ -898,6 +898,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_analytics: { Args: { p_days?: number }; Returns: Json }
+      admin_audit_list: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string; p_target_type?: string }
+        Returns: Json
+      }
+      admin_get_settings: { Args: never; Returns: Json }
+      admin_get_ticket: { Args: { p_ticket_id: string }; Returns: Json }
+      admin_grant_role: {
+        Args: { p_display_name?: string; p_email: string; p_role: string }
+        Returns: undefined
+      }
+      admin_list_admins: { Args: never; Returns: Json }
+      admin_list_templates: { Args: never; Returns: Json }
+      admin_list_tickets: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string; p_status?: string }
+        Returns: Json
+      }
+      admin_login_logs: { Args: { p_limit?: number }; Returns: Json }
+      admin_reply_ticket: {
+        Args: { p_body: string; p_internal?: boolean; p_ticket_id: string }
+        Returns: undefined
+      }
+      admin_revoke_role: { Args: { p_user_id: string }; Returns: undefined }
+      admin_set_admin_active: { Args: { p_active: boolean; p_user_id: string }; Returns: undefined }
+      admin_update_setting: { Args: { p_key: string; p_value: Json }; Returns: undefined }
+      admin_update_ticket: { Args: { p_patch: Json; p_ticket_id: string }; Returns: undefined }
+      admin_upsert_template: { Args: { p_id: string; p_patch: Json }; Returns: undefined }
       admin_conversation_messages: {
         Args: { p_limit?: number; p_match_id: string }
         Returns: Json

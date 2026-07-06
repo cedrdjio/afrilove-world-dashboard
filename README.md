@@ -155,4 +155,35 @@ src/app/
 - Historique des diffusions + annulation d'un envoi programmé
 
 Toutes les données proviennent de Supabase — aucun contenu codé en dur.
-Les sprints suivants (A8 analytics, A9 système…) s'appuient sur ce socle.
+
+## Sprint A8 — livré (Analytics)
+
+- KPIs : DAU, MAU, rétention 7 j, conversion premium, membres/vérifiés/premium, revenus
+- Tops : pays, villes, centres d'intérêt, membres les plus actifs
+- Heatmap d'activité (jour × heure) à partir des messages + swipes
+- Export CSV (tops et membres actifs) · sélecteur de période 7/30/90 j
+
+## Sprint A9 — livré (Système)
+
+- Mode maintenance (interrupteur), feature flags (`app_settings`, lisibles par l'app)
+- Réglages généraux, stockage/journaux, version & about
+- Modèles de messages e-mail/push éditables (`message_templates`)
+
+## Sprint A10 — livré (Rôles & accès / RBAC)
+
+- Liste des membres back-office, ajout par e-mail, changement de rôle,
+  suspension et révocation d'accès (super admin uniquement)
+- Matrice de permissions par rôle
+
+## Sprint A11 — livré (Audit)
+
+- Timeline des actions back-office (filtres par type/recherche, export CSV)
+- Journal des connexions (auth) · toutes les actions admin y sont tracées
+
+## Sprint A12 — livré (Support)
+
+- File des tickets par statut (ouverts / en attente / clos) avec compteurs
+- Fil de conversation, réponses au membre et notes internes, changement de
+  statut / priorité / assignation (`support_tickets`, `support_messages`)
+
+Le back-office couvre désormais l'ensemble des sprints A0 → A12.

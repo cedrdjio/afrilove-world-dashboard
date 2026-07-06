@@ -20,7 +20,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: 'Pilotage',
     items: [
       { label: "Vue d'ensemble", path: '/', icon: LayoutDashboard },
-      { label: 'Analytics', path: '/analytics', icon: ChartColumn, sprint: 'A8' },
+      { label: 'Analytics', path: '/analytics', icon: ChartColumn, },
     ],
   },
   {
@@ -64,11 +64,10 @@ export const NAV_SECTIONS: NavSection[] = [
         path: '/roles',
         icon: ShieldUser,
         minRole: 'super_admin',
-        sprint: 'A10',
       },
-      { label: 'Audit', path: '/audit', icon: ScrollText, minRole: 'admin', sprint: 'A11' },
-      { label: 'Support', path: '/support', icon: LifeBuoy, minRole: 'support', sprint: 'A12' },
-      { label: 'Réglages', path: '/settings', icon: Settings, minRole: 'admin', sprint: 'A9' },
+      { label: 'Audit', path: '/audit', icon: ScrollText, minRole: 'admin' },
+      { label: 'Support', path: '/support', icon: LifeBuoy, minRole: 'support' },
+      { label: 'Réglages', path: '/settings', icon: Settings, minRole: 'admin' },
     ],
   },
 ];

@@ -1,0 +1,122 @@
+<section class="mx-auto flex max-w-5xl flex-col gap-4 animate-fade-up">
+  <header>
+    <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">Réglages</h1>
+    <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">Paramètres de l'application, maintenance, fonctionnalités et modèles</p>
+  </header>
+
+  @if (settingsQuery.isPending()) {
+    <div class="flex flex-col gap-4">@for (i of [1,2,3]; track i) { <div class="skeleton h-32"></div> }</div>
+  } @else if (settings(); as s) {
+    <!-- Maintenance -->
+    <article class="glass-card flex flex-wrap items-center gap-4 p-5">
+      <span class="inline-flex size-11 items-center justify-center rounded-2xl" [class]="s.maintenance_mode?.enabled ? 'bg-danger/12 text-danger' : 'bg-success/12 text-success'">
+        <lucide-icon [img]="MaintenanceIcon" [size]="22" />
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 class="font-display text-base font-bold text-ink dark:text-cream">Mode maintenance</h2>
+        <p class="text-sm text-ink-muted dark:text-cream-bezel2">
+          {{ s.maintenance_mode?.enabled ? 'L\'application est fermée aux membres.' : 'L\'application est ouverte normalement.' }}
+        </p>
+      </div>
+      <button type="button" role="switch" [attr.aria-checked]="s.maintenance_mode?.enabled" (click)="toggleMaintenance()" [disabled]="busy()"
+        class="relative h-7 w-12 shrink-0 rounded-full transition-colors" [class]="s.maintenance_mode?.enabled ? 'bg-danger' : 'bg-ink-faint/30 dark:bg-white/15'">
+        <span class="absolute top-1 size-5 rounded-full bg-white transition-all" [class]="s.maintenance_mode?.enabled ? 'left-6' : 'left-1'"></span>
+      </button>
+    </article>
+
+    <!-- Feature flags -->
+    <article class="glass-card p-5">
+      <div class="mb-3 flex items-center gap-2">
+        <lucide-icon [img]="FlagIcon" [size]="18" class="text-brand-500 dark:text-brand-300" />
+        <h2 class="font-display text-base font-bold text-ink dark:text-cream">Fonctionnalités (feature flags)</h2>
+      </div>
+      <ul class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        @for (flag of flags(); track flag.key) {
+          <li class="flex items-center justify-between gap-3 rounded-xl bg-brand-500/5 px-3.5 py-2.5 dark:bg-white/5">
+            <span class="text-sm font-semibold text-ink capitalize dark:text-cream">{{ flag.key }}</span>
+            <button type="button" role="switch" [attr.aria-checked]="flag.enabled" (click)="toggleFlag(flag.key, flag.enabled)" [disabled]="busy()"
+              class="relative h-6 w-11 shrink-0 rounded-full transition-colors" [class]="flag.enabled ? 'bg-brand-500 dark:bg-brand-400' : 'bg-ink-faint/30 dark:bg-white/15'">
+              <span class="absolute top-1 size-4 rounded-full bg-white transition-all" [class]="flag.enabled ? 'left-6' : 'left-1'"></span>
+            </button>
+          </li>
+        }
+      </ul>
+    </article>
+
+    <!-- Général + About -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <article class="glass-card p-5">
+        <div class="mb-3 flex items-center gap-2"><lucide-icon [img]="InfoIcon" [size]="18" class="text-brand-500 dark:text-brand-300" /><h2 class="font-display text-base font-bold text-ink dark:text-cream">Général</h2></div>
+        <dl class="grid grid-cols-2 gap-y-2 text-sm">
+          <dt class="text-ink-faint dark:text-cream-bezel2/60">Application</dt><dd class="text-ink dark:text-cream">{{ s.general?.app_name }}</dd>
+          <dt class="text-ink-faint dark:text-cream-bezel2/60">Support</dt><dd class="truncate text-ink dark:text-cream">{{ s.general?.support_email }}</dd>
+          <dt class="text-ink-faint dark:text-cream-bezel2/60">Version min. app</dt><dd class="text-ink dark:text-cream">{{ s.general?.min_app_version }}</dd>
+          <dt class="text-ink-faint dark:text-cream-bezel2/60">Version dashboard</dt><dd class="text-ink dark:text-cream">{{ appVersion }}</dd>
+        </dl>
+      </article>
+      <article class="glass-card p-5">
+        <div class="mb-3 flex items-center gap-2"><lucide-icon [img]="StorageIcon" [size]="18" class="text-brand-500 dark:text-brand-300" /><h2 class="font-display text-base font-bold text-ink dark:text-cream">Stockage & journaux</h2></div>
+        <ul class="flex flex-col gap-2 text-sm text-ink-soft dark:text-cream-bezel2">
+          <li class="flex items-center justify-between"><span>Photos de profil</span><span class="font-mono text-xs text-ink-faint">bucket · profile-photos</span></li>
+          <li class="flex items-center justify-between"><span>Documents KYC</span><span class="font-mono text-xs text-ink-faint">bucket · kyc-documents (privé)</span></li>
+          <li><a routerLink="/audit" class="inline-flex items-center gap-1.5 font-semibold text-brand-500 hover:underline dark:text-brand-300"><lucide-icon [img]="LogIcon" [size]="14" /> Consulter les journaux d'audit →</a></li>
+        </ul>
+      </article>
+    </div>
+
+    <!-- Modèles de messages -->
+    <article class="glass-card p-5">
+      <h2 class="mb-3 font-display text-base font-bold text-ink dark:text-cream">Modèles de messages</h2>
+      @if (templatesQuery.isPending()) {
+        <div class="flex flex-col gap-2">@for (i of [1,2,3]; track i) { <div class="skeleton h-14"></div> }</div>
+      } @else if (templatesQuery.data(); as templates) {
+        <ul class="flex flex-col gap-2">
+          @for (tpl of templates; track tpl.id) {
+            <li class="flex items-center gap-3 rounded-xl bg-brand-500/5 px-3.5 py-2.5 dark:bg-white/5">
+              <lucide-icon [img]="tpl.channel === 'email' ? MailIcon : PushIcon" [size]="17" class="shrink-0 text-brand-500 dark:text-brand-300" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold text-ink dark:text-cream">{{ tpl.name }}</p>
+                <p class="truncate text-xs text-ink-muted dark:text-cream-bezel2">{{ tpl.channel === 'email' ? 'E-mail' : 'Push' }}@if (tpl.subject) { · {{ tpl.subject }} }</p>
+              </div>
+              @if (!tpl.is_active) { <span class="rounded-full bg-ink-faint/15 px-2 py-0.5 text-[10px] font-bold text-ink-faint dark:bg-white/10 dark:text-cream-bezel2/70">Inactif</span> }
+              <button type="button" class="btn-icon !size-9" (click)="editTemplate(tpl)" aria-label="Modifier"><lucide-icon [img]="EditIcon" [size]="15" /></button>
+            </li>
+          }
+        </ul>
+      }
+    </article>
+  }
+</section>
+
+<!-- Dialogue édition modèle -->
+@if (templateTarget(); as tpl) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="templateTarget.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-ink dark:text-cream">{{ tpl.name }}</h2>
+      <p class="text-xs text-ink-muted dark:text-cream-bezel2">{{ tpl.channel === 'email' ? 'E-mail' : 'Notification push' }} · {{ tpl.key }}</p>
+      <div class="mt-4 flex flex-col gap-3">
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Nom
+          <input type="text" [value]="tpl.name" (input)="patchTemplate({ name: $any($event.target).value })" class="input-glass mt-1 !py-2.5" />
+        </label>
+        @if (tpl.channel === 'email') {
+          <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Objet
+            <input type="text" [value]="tpl.subject || ''" (input)="patchTemplate({ subject: $any($event.target).value })" class="input-glass mt-1 !py-2.5" />
+          </label>
+        }
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Corps
+          <textarea [value]="tpl.body" (input)="patchTemplate({ body: $any($event.target).value })" rows="6" class="input-glass mt-1 font-body"></textarea>
+        </label>
+        <p class="text-xs text-ink-faint dark:text-cream-bezel2/60">Variables (entre doubles accolades) : <code class="font-mono">first_name</code>, <code class="font-mono">partner_name</code>, <code class="font-mono">reason</code></p>
+        <label class="flex items-center gap-2 text-xs font-bold text-ink-soft dark:text-cream-bezel2">
+          <input type="checkbox" [checked]="tpl.is_active" (change)="patchTemplate({ is_active: $any($event.target).checked })" class="size-4 accent-brand-500" /> Actif
+        </label>
+      </div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="templateTarget.set(null)">Annuler</button>
+        <button type="button" class="btn-brand !py-2.5" (click)="saveTemplate()" [disabled]="busy()">
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } @else { <lucide-icon [img]="SaveIcon" [size]="15" /> } Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+}
