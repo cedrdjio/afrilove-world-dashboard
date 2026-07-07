@@ -76,21 +76,32 @@ export class RolesPage {
   protected async grant(): Promise<void> {
     const email = this.newEmail().trim();
     if (!email) {
-      this.toast.warning("Saisissez l'e-mail du compte");
+      this.toast.warning("Saisissez l'e-mail");
       return;
     }
+    // On sait si l'e-mail a déjà un compte : si aucun membre listé ne le
+    // porte, l'accès sera enregistré en invitation en attente — le message
+    // de succès le reflète pour ne pas laisser croire à un échec.
+    const known = (this.adminsQuery.data() ?? []).some(
+      (m) => m.email?.toLowerCase() === email.toLowerCase(),
+    );
     await this.run(async () => {
       await this.roles.grant(email, this.newRole(), this.newName().trim());
       this.addOpen.set(false);
       this.newEmail.set('');
       this.newName.set('');
-      this.toast.success('Accès accordé');
+      this.toast.success(
+        known ? 'Accès accordé' : 'Invitation enregistrée — accès actif à la 1re connexion',
+      );
     });
   }
 
   protected async toggleActive(member: AdminMember): Promise<void> {
+    if (!member.user_id) {
+      return;
+    }
     await this.run(async () => {
-      await this.roles.setActive(member.user_id, !member.is_active);
+      await this.roles.setActive(member.user_id!, !member.is_active);
       this.toast.success(member.is_active ? 'Accès suspendu' : 'Accès réactivé');
     });
   }
@@ -101,9 +112,16 @@ export class RolesPage {
       return;
     }
     await this.run(async () => {
-      await this.roles.revoke(member.user_id);
+      // Invitation en attente → annulation par e-mail ; membre réel →
+      // révocation par user_id.
+      if (member.pending || !member.user_id) {
+        await this.roles.cancelInvite(member.email ?? '');
+        this.toast.success('Invitation annulée');
+      } else {
+        await this.roles.revoke(member.user_id);
+        this.toast.success('Accès révoqué');
+      }
       this.revokeTarget.set(null);
-      this.toast.success('Accès révoqué');
     });
   }
 

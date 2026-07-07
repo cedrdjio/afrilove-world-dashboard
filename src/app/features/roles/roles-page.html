@@ -23,7 +23,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (member of admins; track member.user_id) {
+          @for (member of admins; track member.user_id || member.email) {
             <tr class="border-b border-ink/4 last:border-0 dark:border-white/5">
               <td class="px-5 py-3">
                 <div class="flex items-center gap-3">
@@ -39,13 +39,22 @@
               </td>
               <td class="px-3 py-3"><span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="roleBadge(member.role)">{{ roleLabel[member.role] }}</span></td>
               <td class="px-3 py-3">
-                <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="member.is_active ? 'bg-success/12 text-success' : 'bg-ink-faint/15 text-ink-faint dark:bg-white/10 dark:text-cream-bezel2/70'">
-                  {{ member.is_active ? 'Actif' : 'Suspendu' }}
-                </span>
+                @if (member.pending) {
+                  <span class="inline-flex rounded-full bg-warning/15 px-2.5 py-1 text-[11px] font-bold text-warning">En attente</span>
+                } @else {
+                  <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold" [class]="member.is_active ? 'bg-success/12 text-success' : 'bg-ink-faint/15 text-ink-faint dark:bg-white/10 dark:text-cream-bezel2/70'">
+                    {{ member.is_active ? 'Actif' : 'Suspendu' }}
+                  </span>
+                }
               </td>
-              <td class="px-3 py-3 text-ink-muted dark:text-cream-bezel2">{{ (member.last_sign_in_at | relativeTime) || '—' }}</td>
+              <td class="px-3 py-3 text-ink-muted dark:text-cream-bezel2">
+                @if (member.pending) { <span class="text-ink-faint dark:text-cream-bezel2/50">Jamais connecté</span> }
+                @else { {{ (member.last_sign_in_at | relativeTime) || '—' }} }
+              </td>
               <td class="px-5 py-3 text-right">
-                @if (member.user_id !== myId()) {
+                @if (member.pending) {
+                  <button type="button" class="btn-icon glass w-auto rounded-xl px-3 text-xs font-bold !text-danger" (click)="revokeTarget.set(member)" [disabled]="busy()">Annuler l'invitation</button>
+                } @else if (member.user_id !== myId()) {
                   <div class="flex justify-end gap-1.5">
                     <button type="button" class="btn-icon glass w-auto rounded-xl px-3 text-xs font-bold" (click)="toggleActive(member)" [disabled]="busy()">
                       {{ member.is_active ? 'Suspendre' : 'Réactiver' }}
@@ -94,9 +103,9 @@
   <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="addOpen.set(false)" role="dialog" aria-modal="true">
     <div class="glass-card w-full max-w-md p-6 animate-scale-in" (click)="$event.stopPropagation()">
       <h2 class="font-display text-lg font-bold text-ink dark:text-cream">Ajouter un membre back-office</h2>
-      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">La personne doit déjà avoir un compte AfriLove (app ou dashboard).</p>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">Si la personne n'a pas encore de compte, l'accès est mis en attente et activé automatiquement à sa première connexion avec cet e-mail.</p>
       <div class="mt-4 flex flex-col gap-3">
-        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">E-mail du compte
+        <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">E-mail
           <input type="email" [value]="newEmail()" (input)="newEmail.set($any($event.target).value)" class="input-glass mt-1 !py-2.5" placeholder="personne@exemple.com" />
         </label>
         <label class="text-xs font-bold text-ink-soft dark:text-cream-bezel2">Nom affiché (optionnel)
@@ -118,16 +127,21 @@
   </div>
 }
 
-<!-- Dialogue révocation -->
+<!-- Dialogue révocation / annulation d'invitation -->
 @if (revokeTarget(); as member) {
   <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="revokeTarget.set(null)" role="dialog" aria-modal="true">
     <div class="glass-card w-full max-w-sm p-6 animate-scale-in" (click)="$event.stopPropagation()">
-      <h2 class="font-display text-lg font-bold text-danger">Révoquer l'accès ?</h2>
-      <p class="mt-2 text-sm text-ink-muted dark:text-cream-bezel2"><strong class="text-ink dark:text-cream">{{ member.display_name || member.email }}</strong> perdra tout accès au back-office. Son compte membre n'est pas affecté.</p>
+      @if (member.pending) {
+        <h2 class="font-display text-lg font-bold text-danger">Annuler l'invitation ?</h2>
+        <p class="mt-2 text-sm text-ink-muted dark:text-cream-bezel2">L'invitation de <strong class="text-ink dark:text-cream">{{ member.email }}</strong> sera supprimée. Aucun accès ne sera accordé à sa connexion.</p>
+      } @else {
+        <h2 class="font-display text-lg font-bold text-danger">Révoquer l'accès ?</h2>
+        <p class="mt-2 text-sm text-ink-muted dark:text-cream-bezel2"><strong class="text-ink dark:text-cream">{{ member.display_name || member.email }}</strong> perdra tout accès au back-office. Son compte membre n'est pas affecté.</p>
+      }
       <div class="mt-5 flex justify-end gap-2">
         <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="revokeTarget.set(null)">Annuler</button>
         <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-danger px-5 py-2.5 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60" (click)="confirmRevoke()" [disabled]="busy()">
-          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } Révoquer
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } {{ member.pending ? "Annuler l'invitation" : 'Révoquer' }}
         </button>
       </div>
     </div>

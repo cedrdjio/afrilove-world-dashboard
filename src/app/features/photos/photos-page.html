@@ -1,0 +1,118 @@
+<section class="mx-auto flex max-w-6xl flex-col gap-4 animate-fade-up">
+  <header class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="font-display text-2xl font-extrabold tracking-tight text-ink dark:text-cream">Modération des images</h1>
+      <p class="mt-1 text-sm text-ink-muted dark:text-cream-bezel2">Contrôlez les photos de profil signalées ou sensibles</p>
+    </div>
+  </header>
+
+  <!-- Filtres : statut + recherche -->
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap gap-1.5">
+      @for (t of tabs; track t) {
+        <button
+          type="button"
+          class="rounded-xl px-3.5 py-2 text-xs font-bold transition-all"
+          [class]="photos.status() === t ? 'bg-brand-500 text-white shadow-sm' : 'glass text-ink-muted hover:text-ink dark:text-cream-bezel2'"
+          (click)="photos.setStatus(t)"
+        >
+          {{ tabLabel(t) }}
+        </button>
+      }
+    </div>
+    <div class="relative">
+      <lucide-icon [img]="SearchIcon" [size]="15" class="absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint" />
+      <input
+        type="search"
+        class="input-glass !py-2.5 !pl-9"
+        placeholder="Nom ou e-mail du membre…"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  @if (listQuery.isPending()) {
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">@for (i of [1,2,3,4,5,6,7,8]; track i) { <div class="skeleton aspect-[0.8] rounded-2xl"></div> }</div>
+  } @else if (result(); as data) {
+    @if (data.items.length === 0) {
+      <div class="glass-card flex flex-col items-center gap-3 py-16 text-center">
+        <lucide-icon [img]="EmptyIcon" [size]="34" class="text-ink-faint" />
+        <p class="text-sm text-ink-muted dark:text-cream-bezel2">Aucune photo dans cette catégorie.</p>
+      </div>
+    } @else {
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        @for (photo of data.items; track photo.id) {
+          <article class="glass-card overflow-hidden p-0">
+            <div class="relative aspect-[0.8] cursor-zoom-in bg-ink/5" (click)="preview.set(photo)">
+              <img [src]="photo.url" alt="Photo de profil" class="h-full w-full object-cover" loading="lazy" />
+              <span class="absolute top-2 left-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold" [class]="statusBadge(photo.moderation_status)">
+                {{ tabLabel(photo.moderation_status) }}
+              </span>
+              @if (photo.open_reports > 0) {
+                <span class="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-danger px-2 py-0.5 text-[10px] font-bold text-white">
+                  <lucide-icon [img]="WarnIcon" [size]="11" /> {{ photo.open_reports }}
+                </span>
+              }
+            </div>
+            <div class="flex flex-col gap-2 p-3">
+              <a [routerLink]="['/users', photo.profile_id]" class="min-w-0">
+                <p class="truncate text-sm font-semibold text-ink hover:underline dark:text-cream">{{ photo.first_name || '—' }}</p>
+                <p class="truncate text-[11px] text-ink-muted dark:text-cream-bezel2">{{ photo.email }}</p>
+              </a>
+              @if (photo.moderation_note) {
+                <p class="rounded-lg bg-ink/4 px-2 py-1 text-[11px] text-ink-muted dark:bg-white/5 dark:text-cream-bezel2">« {{ photo.moderation_note }} »</p>
+              }
+              <div class="flex gap-1.5">
+                @if (photo.moderation_status !== 'approved') {
+                  <button type="button" class="flex-1 rounded-lg bg-success/12 py-1.5 text-[11px] font-bold text-success transition hover:brightness-110 disabled:opacity-50" (click)="moderate(photo, 'approve')" [disabled]="busy()">Approuver</button>
+                }
+                @if (photo.moderation_status !== 'flagged') {
+                  <button type="button" class="flex-1 rounded-lg bg-warning/15 py-1.5 text-[11px] font-bold text-warning transition hover:brightness-110 disabled:opacity-50" (click)="moderate(photo, 'flag')" [disabled]="busy()">Signaler</button>
+                }
+                @if (photo.moderation_status !== 'hidden') {
+                  <button type="button" class="flex-1 rounded-lg bg-danger/12 py-1.5 text-[11px] font-bold text-danger transition hover:brightness-110 disabled:opacity-50" (click)="hideTarget.set(photo)" [disabled]="busy()">Masquer</button>
+                }
+              </div>
+              <p class="text-[10px] text-ink-faint dark:text-cream-bezel2/60">Ajoutée {{ photo.created_at | relativeTime }}</p>
+            </div>
+          </article>
+        }
+      </div>
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="mt-1 flex items-center justify-center gap-3">
+          <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold disabled:opacity-40" (click)="photos.page.set(photos.page() - 1)" [disabled]="photos.page() === 0">Précédent</button>
+          <span class="text-sm text-ink-muted dark:text-cream-bezel2">{{ photos.page() + 1 }} / {{ totalPages() }}</span>
+          <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold disabled:opacity-40" (click)="photos.page.set(photos.page() + 1)" [disabled]="photos.page() + 1 >= totalPages()">Suivant</button>
+        </div>
+      }
+    }
+  }
+</section>
+
+<!-- Aperçu plein écran -->
+@if (preview(); as photo) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/75 p-6 backdrop-blur-sm" (click)="preview.set(null)" role="dialog" aria-modal="true">
+    <img [src]="photo.url" alt="Aperçu" class="max-h-full max-w-full rounded-2xl object-contain animate-scale-in" (click)="$event.stopPropagation()" />
+  </div>
+}
+
+<!-- Dialogue masquage (motif) -->
+@if (hideTarget(); as photo) {
+  <div class="fixed inset-0 z-[80] flex items-center justify-center bg-deep-black/45 px-4 backdrop-blur-sm" (click)="hideTarget.set(null)" role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-md p-6 animate-scale-in" (click)="$event.stopPropagation()">
+      <h2 class="font-display text-lg font-bold text-danger">Masquer cette photo ?</h2>
+      <p class="mt-2 text-sm text-ink-muted dark:text-cream-bezel2">Elle disparaîtra du profil public et de l'avatar. Le membre reçoit une notification l'invitant à la remplacer.</p>
+      <label class="mt-4 block text-xs font-bold text-ink-soft dark:text-cream-bezel2">Motif (optionnel, visible dans l'audit)
+        <input type="text" [value]="hideNote()" (input)="hideNote.set($any($event.target).value)" class="input-glass mt-1 !py-2.5" placeholder="Contenu inapproprié…" />
+      </label>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-icon glass w-auto rounded-xl px-4 text-sm font-bold" (click)="hideTarget.set(null)">Annuler</button>
+        <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-danger px-5 py-2.5 font-display text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-60" (click)="confirmHide()" [disabled]="busy()">
+          @if (busy()) { <lucide-icon [img]="LoaderIcon" [size]="15" class="animate-spin" /> } Masquer
+        </button>
+      </div>
+    </div>
+  </div>
+}

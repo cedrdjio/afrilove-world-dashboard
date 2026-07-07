@@ -5,13 +5,16 @@ import { SupabaseClientService } from '../../core/services/supabase-client.servi
 import type { AdminRole } from '../../models/admin.model';
 
 export interface AdminMember {
-  user_id: string;
+  /** null pour une invitation encore en attente (pas encore de compte). */
+  user_id: string | null;
   role: AdminRole;
   display_name: string | null;
   is_active: boolean;
   created_at: string;
   email: string | null;
   last_sign_in_at: string | null;
+  /** true = invitation en attente : l'accès sera actif à la 1re connexion. */
+  pending: boolean;
 }
 
 /** Sprint A10 — gestion des accès back-office (super admin). */
@@ -53,6 +56,15 @@ export class RolesService {
 
   async revoke(userId: string): Promise<void> {
     const { error } = await this.supabase.rpc('admin_revoke_role', { p_user_id: userId });
+    if (error) {
+      throw new Error(error.message);
+    }
+    this.invalidate();
+  }
+
+  /** Annule une invitation encore en attente (pas de compte à révoquer). */
+  async cancelInvite(email: string): Promise<void> {
+    const { error } = await this.supabase.rpc('admin_cancel_invite', { p_email: email });
     if (error) {
       throw new Error(error.message);
     }
