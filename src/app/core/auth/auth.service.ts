@@ -62,9 +62,35 @@ export class AuthService {
   }
 
   async signIn(email: string, password: string): Promise<AdminUser> {
-    const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+    // Hors-ligne : inutile d'attendre un timeout, on le dit tout de suite.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error(
+        'Vous semblez hors ligne. Vérifiez votre connexion Internet puis réessayez.',
+      );
+    }
+
+    // Timeout explicite : sur réseau très lent, on échoue en ~20 s avec un
+    // message clair plutôt que de laisser l'utilisateur attendre sans fin.
+    let result: Awaited<ReturnType<typeof this.supabase.auth.signInWithPassword>>;
+    try {
+      result = await this.withTimeout(
+        this.supabase.auth.signInWithPassword({ email, password }),
+        20_000,
+      );
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'TimeoutError') {
+        throw new Error(
+          'Le serveur met trop de temps à répondre (réseau lent ou service momentanément indisponible). Réessayez dans un instant.',
+        );
+      }
+      throw new Error(
+        "Impossible de joindre le serveur d'authentification. Réseau instable ou service indisponible.",
+      );
+    }
+
+    const { data, error } = result;
     if (error) {
-      throw new Error(this.translateAuthError(error.message));
+      throw new Error(this.translateAuthError(error));
     }
 
     const admin = await this.fetchAdmin(data.user.id);
@@ -94,16 +120,49 @@ export class AuthService {
     return data?.is_active ? data : null;
   }
 
-  private translateAuthError(message: string): string {
-    if (/invalid login credentials/i.test(message)) {
+  /** Course la promesse contre un timeout ; rejette avec un DOMException 'TimeoutError'. */
+  private async withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new DOMException('timeout', 'TimeoutError')), ms);
+    });
+    try {
+      return await Promise.race([promise, timeout]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  /**
+   * Traduit une erreur d'authentification Supabase en message précis.
+   * Règle d'or : ne JAMAIS présenter une erreur serveur (5xx) comme un problème
+   * réseau — sinon un vrai bug back-office passe pour une panne de connexion.
+   */
+  private translateAuthError(error: { status?: number; code?: string; message?: string }): string {
+    const status = error.status ?? 0;
+    const msg = error.message ?? '';
+    const code = error.code ?? '';
+
+    // Échec réseau remonté par supabase-js (fetch KO) : status 0.
+    if (status === 0 || /failed to fetch|network|fetch failed|load failed/i.test(msg)) {
+      return "Impossible de joindre le serveur d'authentification. Réseau instable ou service indisponible — réessayez dans un instant.";
+    }
+    // Identifiants incorrects.
+    if (code === 'invalid_credentials' || /invalid login credentials/i.test(msg)) {
       return 'E-mail ou mot de passe incorrect.';
     }
-    if (/email not confirmed/i.test(message)) {
+    if (code === 'email_not_confirmed' || /email not confirmed/i.test(msg)) {
       return 'Adresse e-mail non confirmée.';
     }
-    if (/rate limit/i.test(message)) {
-      return 'Trop de tentatives. Patientez un instant.';
+    if (status === 429 || /rate limit/i.test(msg)) {
+      return 'Trop de tentatives. Patientez un instant avant de réessayer.';
     }
-    return 'Connexion impossible. Vérifiez votre réseau et réessayez.';
+    // 5xx : anomalie côté serveur / base — c'est un incident technique, PAS la
+    // connexion de l'utilisateur. On le nomme clairement pour qu'il soit traité.
+    if (status >= 500) {
+      return `Erreur côté serveur (${status}) : le service d'authentification a renvoyé une anomalie — ce n'est pas votre connexion. Signalez-le à l'équipe technique.`;
+    }
+    // Dernier recours : message explicite (statut + raison) plutôt que générique.
+    return `Connexion refusée${status ? ` (code ${status})` : ''}. ${msg || 'Raison inconnue.'}`;
   }
 }

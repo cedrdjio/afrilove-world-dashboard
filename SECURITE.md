@@ -33,6 +33,61 @@ mobile** écrasait le mot de passe partagé, cassant le login du dashboard.
    journalisée dans `admin_audit_log`
    (`security.admin_password_changed` / `security.admin_email_changed`).
 
+## Incident du 26/07/2026 (suite) — login 500 après création du compte dédié
+
+### Symptôme
+Le nouveau compte `admin@afriloveworld.com` affichait « Connexion impossible.
+Vérifiez votre réseau et réessayez. » alors que le mot de passe était correct.
+
+### Diagnostic
+Le message était en réalité un **fourre-tout** qui masquait la vraie cause. Les
+logs GoTrue montraient une **erreur 500** au `POST /token` :
+
+```
+error finding user: sql: Scan error on column index 3, name "confirmation_token":
+converting NULL to string is unsupported  →  500: Database error querying schema
+```
+
+**Cause racine :** le compte dédié avait été créé par un `INSERT` SQL direct
+(réponse à l'incident). Un `INSERT` manuel laisse les colonnes « token » de
+`auth.users` (`confirmation_token`, `recovery_token`, `email_change_token_new`,
+`email_change`…) à **NULL**. GoTrue (écrit en Go) ne sait pas lire NULL dans une
+chaîne et **échoue avant même de vérifier le mot de passe** — d'où un login
+impossible malgré des identifiants valides. C'est un effet de bord de la
+création manuelle, pas une compromission.
+
+### Corrections appliquées (migration `20260726160000_auth_token_null_guard`)
+1. **Réparation** : toutes les colonnes token NULL de `auth.users` remises à `''`.
+2. **Garde-fou permanent** : trigger `trg_guard_auth_user_tokens`
+   (`BEFORE INSERT OR UPDATE`) qui force `coalesce(col, '')` sur ces colonnes.
+   Un `INSERT` SQL manuel ne peut donc **plus jamais** réintroduire la panne.
+   (No-op pour GoTrue, qui écrit déjà `''`.)
+3. **Côté dashboard** : le login distingue désormais hors-ligne / timeout /
+   erreur serveur 5xx / identifiants — une anomalie **serveur** n'est plus
+   jamais présentée comme un problème de réseau, et un timeout de 20 s évite
+   l'attente sans fin sur réseau lent.
+
+### Créer un compte admin par SQL — recette SÛRE (break-glass)
+Le trigger protège désormais, mais pour rester explicite, initialiser les
+colonnes token à `''` dès l'`INSERT` :
+
+```sql
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at,
+  confirmation_token, recovery_token, email_change_token_new, email_change,
+  raw_app_meta_data, raw_user_meta_data
+) values (
+  '00000000-0000-0000-0000-000000000000', gen_random_uuid(),
+  'authenticated', 'authenticated', 'nouvel-admin@afriloveworld.com',
+  extensions.crypt('MOT_DE_PASSE_FORT', extensions.gen_salt('bf', 10)),
+  now(), now(), now(),
+  '', '', '', '',                       -- ← jamais NULL
+  '{"provider":"email","providers":["email"]}', '{"role":"dashboard_admin"}'
+);
+-- puis créer l'identité auth.identities et la ligne public.admin_users.
+```
+
 ## Règles permanentes (à ne jamais enfreindre)
 
 1. **Un compte admin ne sert QU'au dashboard.** Ne jamais se connecter à l'app
