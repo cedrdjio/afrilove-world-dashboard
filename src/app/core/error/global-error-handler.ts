@@ -1,4 +1,5 @@
 import { ErrorHandler, Injectable, Injector, inject } from '@angular/core';
+import { isChunkLoadError, scheduleShellReload } from '../chunk-loader';
 import { ToastService } from '../services/toast.service';
 
 /**
@@ -14,6 +15,13 @@ export class GlobalErrorHandler implements ErrorHandler {
 
   handleError(error: unknown): void {
     console.error(error);
+
+    // Échec de chargement d'un module lazy (souvent une coquille périmée après
+    // déploiement) : on répare en rechargeant plutôt que d'afficher une erreur.
+    if (isChunkLoadError(error)) {
+      scheduleShellReload();
+      return;
+    }
 
     const message = this.extractMessage(error);
     const now = Date.now();
